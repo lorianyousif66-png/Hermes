@@ -126,10 +126,14 @@ hermes:rota      Schichtrhythmus { start: "YYYY-MM-DD", seq: [shiftKey, …] }
   beim Speichern erkannt (`state.lastPRs` → Anzeige in `viewDone`), Liste unter
   Training → Verlauf, Anzeige „★ Rekord" in der Übungskarte.
 - `NAVICONS` / `kcalRing()` — monochrome SVG-Icons in der Tab-Leiste, Kalorien-Ring im Essen-Tab.
-- `rotaShift(date)` / `effShift(date)` / `rotaEditor()` — Schichtrhythmus (`hermes:rota`):
-  wiederholender Zyklus ab Startdatum, Editor unter „Mehr" → Schichtplan (Tag antippen =
-  Schicht durchwechseln, Vorlage 2-2-2-2). „Heute" nutzt `effShift` (manuelle Wahl in
-  `hermes:shifts` überschreibt den Rhythmus tagesweise), inkl. 7-Tage-Vorschau.
+- `rotaShift(date)` / `effShift(date)` / `rotaEditor()` / `rotaApplied()` — Schichtrhythmus
+  (`hermes:rota`): wiederholender Zyklus ab Startdatum, Editor unter „Mehr" → Schichtplan
+  (Tag antippen = Schicht durchwechseln, Vorlage 2-2-2-2). „Heute" nutzt `effShift`
+  (manuelle Wahl in `hermes:shifts` überschreibt tagesweise; erneutes Antippen des aktiven
+  Chips löscht den Override). Rhythmus-Änderungen entfernen Overrides ab heute
+  (`rotaApplied`). 7-Tage-Vorschau im Heute-Tab.
+- `dateKey(d)` / `todayKey()` — Datums-Schlüssel in LOKALER Zeit (nicht UTC/ISO)!
+  Wichtig für Nachtschicht um Mitternacht. Nie durch `toISOString().slice(0,10)` ersetzen.
 - `openExInfo(name)` / `bodySVG()` / `MUSCLE_MAP` / `findExMeta()` — Übungs-Info-Fenster
   (Bottom-Sheet `#exmodal`, statisch im Body, imperativ): Muskel-Grafik (Vorder-/Rückseite,
   beanspruchte Muskeln hervorgehoben), eigene Werte (Rekord/letztes Mal), Anleitung.

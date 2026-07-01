@@ -513,6 +513,13 @@ function rotaShift(dateStr){
  return r.seq[i];
 }
 function effShift(dateStr){return state.shiftByDate[dateStr]||rotaShift(dateStr)||null;}
+/* Nach Rhythmus-Änderungen manuelle Tages-Overrides ab heute entfernen,
+   damit der neue Rhythmus sofort greift (Vergangenheit bleibt erhalten). */
+function rotaApplied(){
+ const t=todayKey(),sbd={};let changed=false;
+ Object.entries(state.shiftByDate).forEach(([d,v])=>{if(d<t)sbd[d]=v;else changed=true;});
+ if(changed){state.shiftByDate=sbd;save(K.shifts,sbd);}
+}
 
 function defaultPlan(){
  const mk=(name,sets,reps,unit)=>{const s=findExSteps(name);return {id:uid(),name,sets,reps,unit,steps:s};};
@@ -558,7 +565,10 @@ function generatePlan(focus,days){
 const K={plan:"hermes:plan",settings:"hermes:settings",profile:"hermes:profile",weight:"hermes:bw",history:"hermes:hist",last:"hermes:last",nextDay:"hermes:next",shifts:"hermes:shifts",food:"hermes:food",water:"hermes:water",custom:"hermes:custom",pr:"hermes:pr",rota:"hermes:rota"};
 function load(k,fb){try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch{return fb;}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.error(e);}}
-const todayKey=()=>new Date().toISOString().slice(0,10);
+/* Datums-Schlüssel in LOKALER Zeit (nicht UTC) — wichtig für Nachtschicht:
+   um 0:30 deutscher Zeit muss "heute" der richtige Kalendertag sein. */
+const dateKey=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const todayKey=()=>dateKey(new Date());
 const fmtDate=iso=>new Date(iso).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"});
 const fmtFull=iso=>new Date(iso).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"2-digit"});
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -657,8 +667,8 @@ function viewHeute(){
  if(rotaShift(todayKey())){
   const days=[];const wd=["So","Mo","Di","Mi","Do","Fr","Sa"];
   const sh={frueh:"F",spaet:"S",nacht:"N",frei:"–"};
-  for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()+i);const key=d.toISOString().slice(0,10);const s=effShift(key);days.push(`<div class="rotaday${i===0?' rotaday--today':''}"><span class="rd-wd">${i===0?"Heute":wd[d.getDay()]}</span><span class="rd-s">${s?sh[s]:"—"}</span></div>`);}
-  preview=`<div class="rotaprev">${days.join("")}</div><p class="muted sm" style="margin:8px 0 0">F Früh · S Spät · N Nacht · – Frei. ${fromRota?"Automatisch aus deinem Schichtrhythmus — Tipp auf eine Schicht überschreibt nur heute.":"Heute manuell gewählt."}</p>`;
+  for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()+i);const key=dateKey(d);const s=effShift(key);days.push(`<div class="rotaday${i===0?' rotaday--today':''}"><span class="rd-wd">${i===0?"Heute":wd[d.getDay()]}</span><span class="rd-s">${s?sh[s]:"—"}</span></div>`);}
+  preview=`<div class="rotaprev">${days.join("")}</div><p class="muted sm" style="margin:8px 0 0">F Früh · S Spät · N Nacht · – Frei. ${fromRota?"Automatisch aus deinem Schichtrhythmus — Tipp auf eine Schicht überschreibt nur heute.":"Heute manuell gewählt — erneut antippen, dann gilt wieder der Rhythmus."}</p>`;
  }else if(!ts)preview=`<p class="muted sm" style="margin:10px 0 0">Tipp: Unter „Mehr" → „Schichtplan" hinterlegst du deinen Schicht-Rhythmus einmal — dann wählt Hermes die Schicht jeden Tag automatisch.</p>`;
  let hero;
  if(ts){const s=SHIFTS[ts];hero=`<section class="card hero"><div class="hero-tag">${s.label}schicht</div><div class="hero-when">${s.when}</div><p class="hero-note">${s.note}</p>${s.train?`<button class="btn" data-go="training">${esc(nd.label)} starten</button>`:`<div class="hero-rest">Heute leicht halten.</div>`}</section>`;}
@@ -829,7 +839,7 @@ function viewEssen(){
 }
 function weekStats(){
  const days=[];
- for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const key=d.toISOString().slice(0,10);
+ for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const key=dateKey(d);
   const log=state.foodLog[key]||[];let kcal=0,p=0;log.forEach(e=>{kcal+=e.n.kcal||0;p+=e.n.p||0;});
   days.push({key,label:["So","Mo","Di","Mi","Do","Fr","Sa"][d.getDay()],kcal,p,has:log.length>0});}
  return days;
@@ -854,7 +864,7 @@ function weekCard(tg){
 function dayTotals(key){const log=state.foodLog[key]||[];const o={kcal:0,p:0,c:0,f:0};log.forEach(e=>{o.kcal+=e.n.kcal||0;o.p+=e.n.p||0;o.c+=e.n.c||0;o.f+=e.n.f||0;});return o;}
 function trendCard(tg){
  const N=14,days=[];
- for(let i=N-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const key=d.toISOString().slice(0,10);days.push({key,...dayTotals(key)});}
+ for(let i=N-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const key=dateKey(d);days.push({key,...dayTotals(key)});}
  if(days.filter(d=>d.kcal>0).length<2)return `<section class="card"><div class="eyebrow">Verlauf · 14 Tage</div><p class="muted sm">Sobald du an mindestens zwei Tagen Essen einträgst, erscheint hier die Verlaufskurve für Kalorien und Makros.</p></section>`;
  const metrics={kcal:["Kalorien","kcal",tg.kcal],p:["Protein","g",tg.p],c:["Kohlenh.","g",tg.c],f:["Fett","g",tg.f]};
  const m=metrics[state.trendMetric]?state.trendMetric:"kcal",[ml,mu,mt]=metrics[m];
@@ -1079,7 +1089,7 @@ function wire(){
  navEl.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;state.libFor=null;state.foodPicker=false;if(b.dataset.tab==="training")state.trainView="log";render();});
  main.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{state.tab=b.dataset.go;if(b.dataset.go==="training")state.trainView="log";render();});
  // Heute
- main.querySelectorAll("[data-shift]").forEach(b=>b.onclick=()=>{state.shiftByDate={...state.shiftByDate,[todayKey()]:b.dataset.shift};save(K.shifts,state.shiftByDate);render();});
+ main.querySelectorAll("[data-shift]").forEach(b=>b.onclick=()=>{const day=todayKey(),k=b.dataset.shift,sbd={...state.shiftByDate};if(sbd[day]===k)delete sbd[day];else sbd[day]=k;state.shiftByDate=sbd;save(K.shifts,sbd);render();});
  // Training
  main.querySelectorAll("[data-trainview]").forEach(b=>b.onclick=()=>{state.trainView=b.dataset.trainview;state.libFor=null;render();});
  main.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>switchDay(b.dataset.day));
@@ -1116,11 +1126,11 @@ function wire(){
  const pfAct=document.getElementById("pfAct");if(pfAct)pfAct.onchange=()=>{state.profile.activity=+pfAct.value;sPr();};
  const pfGoal=document.getElementById("pfGoal");if(pfGoal)pfGoal.onchange=()=>{state.profile.goal=pfGoal.value;sPr();};
  // Schichtplan
- const rs=document.getElementById("rotaStart");if(rs)rs.onchange=()=>{state.rota={...state.rota,start:rs.value};save(K.rota,state.rota);};
- main.querySelectorAll("[data-rotacycle]").forEach(b=>b.onclick=()=>{const i=+b.dataset.rotacycle;const order=["frueh","spaet","nacht","frei"];state.rota.seq[i]=order[(order.indexOf(state.rota.seq[i])+1)%4];save(K.rota,state.rota);render();});
- const ra=main.querySelector("[data-rotaadd]");if(ra)ra.onclick=()=>{state.rota.seq.push("frei");if(!state.rota.start)state.rota.start=todayKey();save(K.rota,state.rota);render();};
- const rd=main.querySelector("[data-rotadel]");if(rd)rd.onclick=()=>{state.rota.seq.pop();save(K.rota,state.rota);render();};
- const rp=main.querySelector("[data-rotapreset]");if(rp)rp.onclick=()=>{state.rota={start:state.rota.start||todayKey(),seq:["frueh","frueh","spaet","spaet","nacht","nacht","frei","frei"]};save(K.rota,state.rota);render();};
+ const rs=document.getElementById("rotaStart");if(rs)rs.onchange=()=>{state.rota={...state.rota,start:rs.value};save(K.rota,state.rota);rotaApplied();};
+ main.querySelectorAll("[data-rotacycle]").forEach(b=>b.onclick=()=>{const i=+b.dataset.rotacycle;const order=["frueh","spaet","nacht","frei"];state.rota.seq[i]=order[(order.indexOf(state.rota.seq[i])+1)%4];save(K.rota,state.rota);rotaApplied();render();});
+ const ra=main.querySelector("[data-rotaadd]");if(ra)ra.onclick=()=>{state.rota.seq.push("frei");if(!state.rota.start)state.rota.start=todayKey();save(K.rota,state.rota);rotaApplied();render();};
+ const rd=main.querySelector("[data-rotadel]");if(rd)rd.onclick=()=>{state.rota.seq.pop();save(K.rota,state.rota);rotaApplied();render();};
+ const rp=main.querySelector("[data-rotapreset]");if(rp)rp.onclick=()=>{state.rota={start:state.rota.start||todayKey(),seq:["frueh","frueh","spaet","spaet","nacht","nacht","frei","frei"]};save(K.rota,state.rota);rotaApplied();render();};
  const rc=main.querySelector("[data-rotaclear]");if(rc)rc.onclick=()=>{if(!confirm("Schichtrhythmus löschen?"))return;state.rota={start:"",seq:[]};save(K.rota,state.rota);render();};
  // plan
  main.querySelectorAll("[data-daylabel]").forEach(i=>i.oninput=()=>{dayById(i.dataset.daylabel).label=i.value;sP();});
