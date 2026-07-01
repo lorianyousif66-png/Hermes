@@ -196,6 +196,35 @@ details.steps li{font-size:13px;line-height:1.5;color:var(--text);margin-bottom:
 /* Bibliothek-Filter */
 .libchips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;-webkit-overflow-scrolling:touch;}
 .libchips .chip{flex:none;padding:9px 12px;font-size:13px;}
+/* Satz +/- */
+.setbtn{background:transparent;border:1px dashed var(--line);color:var(--muted);font-size:12px;font-weight:600;padding:9px 12px;border-radius:9px;cursor:pointer;font-family:inherit;}
+.setbtn:disabled{opacity:.35;}
+.ex-name{cursor:pointer;}
+.ex-i{color:var(--muted);font-size:13px;font-weight:400;}
+/* Übungs-Info-Fenster */
+.exmodal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:150;display:none;align-items:flex-end;justify-content:center;}
+.exmodal.on{display:flex;}
+.exmodal-card{background:var(--surface);border:1px solid var(--line);border-radius:18px 18px 0 0;max-width:480px;width:100%;max-height:84vh;overflow-y:auto;padding:18px 18px calc(22px + env(safe-area-inset-bottom));}
+.exm-head{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.exm-title{font-weight:800;font-size:19px;}
+.exm-group{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+.exm-sec{font-weight:700;font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-top:14px;}
+.exm-steps{margin:8px 0 0;padding-left:20px;}
+.exm-steps li{font-size:14px;line-height:1.55;margin-bottom:4px;}
+.exm-stats{font-size:14px;margin:6px 0 0;}
+.body{display:block;margin:10px auto 0;width:210px;max-width:100%;}
+.body .b-base{fill:var(--surface2);stroke:var(--hair);stroke-width:1;}
+.body .m-off{fill:var(--surface2);stroke:var(--hair);stroke-width:1;}
+.body .m-on{fill:var(--text);stroke:var(--text);stroke-width:1;}
+/* Schichtplan */
+.rotaseq{display:flex;flex-wrap:wrap;gap:6px;}
+.rotachip{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:9px;padding:8px 10px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:inherit;}
+.rotachip .rc-n{font-size:10px;color:var(--muted);}
+.rotaprev{display:flex;gap:4px;margin-top:12px;}
+.rotaday{flex:1;border:1px solid var(--hair);border-radius:8px;padding:6px 2px;text-align:center;display:flex;flex-direction:column;gap:2px;min-width:0;}
+.rotaday--today{border-color:var(--text);}
+.rd-wd{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
+.rd-s{font-size:13px;font-weight:700;}
 .scan-added{background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-size:13px;line-height:1.4;margin-bottom:12px;}
 .scan{position:fixed;inset:0;background:#000;z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));}
 .scan.on{display:flex;}
@@ -227,6 +256,7 @@ details.steps li{font-size:13px;line-height:1.5;color:var(--text);margin-bottom:
     <button class="scan-btn ghost" id="scanCloseBtn">Abbrechen</button>
   </div>
 </div>
+<div class="exmodal" id="exmodal"><div class="exmodal-card" id="exmodalCard"></div></div>
 <script>
 "use strict";
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -472,6 +502,17 @@ const SHIFTS={
  nacht:{label:"Nacht",when:"Wenn überhaupt: vor der Schicht, leicht.",note:"Kein PR-Tag. Cardio, Mobility, Technik. Der Körper ist im Defizit.",train:false},
  frei:{label:"Frei",when:"Dein bester Trainingstag.",note:"Aber: 1. Tag nach Nacht-Block gehört dem Schlaf.",train:true},
 };
+/* Schichtrhythmus: wiederholender Zyklus ab Startdatum (hermes:rota).
+   Manuelle Auswahl im Heute-Tab überschreibt den Rhythmus für den einzelnen Tag. */
+function rotaShift(dateStr){
+ const r=state.rota;
+ if(!r||!r.start||!r.seq||!r.seq.length)return null;
+ const d=Math.round((new Date(dateStr)-new Date(r.start))/86400000);
+ if(isNaN(d))return null;
+ const n=r.seq.length,i=((d%n)+n)%n;
+ return r.seq[i];
+}
+function effShift(dateStr){return state.shiftByDate[dateStr]||rotaShift(dateStr)||null;}
 
 function defaultPlan(){
  const mk=(name,sets,reps,unit)=>{const s=findExSteps(name);return {id:uid(),name,sets,reps,unit,steps:s};};
@@ -514,7 +555,7 @@ function generatePlan(focus,days){
  });
 }
 
-const K={plan:"hermes:plan",settings:"hermes:settings",profile:"hermes:profile",weight:"hermes:bw",history:"hermes:hist",last:"hermes:last",nextDay:"hermes:next",shifts:"hermes:shifts",food:"hermes:food",water:"hermes:water",custom:"hermes:custom",pr:"hermes:pr"};
+const K={plan:"hermes:plan",settings:"hermes:settings",profile:"hermes:profile",weight:"hermes:bw",history:"hermes:hist",last:"hermes:last",nextDay:"hermes:next",shifts:"hermes:shifts",food:"hermes:food",water:"hermes:water",custom:"hermes:custom",pr:"hermes:pr",rota:"hermes:rota"};
 function load(k,fb){try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch{return fb;}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.error(e);}}
 const todayKey=()=>new Date().toISOString().slice(0,10);
@@ -529,7 +570,7 @@ const state={
  settings:Object.assign({theme:"obsidian",rest:90,protein:1.9},load(K.settings,{})),
  profile:Object.assign({sex:"m",age:30,height:180,activity:1.375,goal:"abnehmen"},load(K.profile,{})),
  bodyweight:load(K.weight,[]),history:load(K.history,[]),lastBest:load(K.last,{}),prs:load(K.pr,{}),lastPRs:[],
- nextDayId:load(K.nextDay,null),shiftByDate:load(K.shifts,{}),
+ nextDayId:load(K.nextDay,null),shiftByDate:load(K.shifts,{}),rota:load(K.rota,{start:"",seq:[]}),
  foodLog:load(K.food,{}),waterLog:load(K.water,{}),customFoods:load(K.custom,[]),
  trainDayId:null,log:null,saved:false,note:"",acc:{},rest:{active:false,left:0,timer:null},
  libFor:null,foodPicker:false,wiz:{focus:"aufbau",days:2},trendMetric:"kcal",scanAdded:null,trainView:"log",
@@ -572,9 +613,16 @@ function consumedToday(){
 
 /* ---------- Render ---------- */
 const main=document.getElementById("main"),navEl=document.getElementById("nav");
+/* Scroll-Verhalten: innerhalb derselben Ansicht (z. B. Plan bearbeiten) bleibt die
+   Scroll-Position erhalten; nur echte Ansichts-Wechsel springen nach oben. */
+let lastViewSig="";
 function render(){
+ const sig=[state.tab,state.trainView,state.libFor?"lib":"",state.foodPicker?"fp":"",state.saved?"done":""].join("|");
+ const y=window.scrollY;
  const v={heute:viewHeute,training:viewTraining,essen:viewEssen,gewicht:viewGewicht,mehr:viewMehr}[state.tab];
- main.innerHTML=v();renderNav();wire();window.scrollTo(0,0);
+ main.innerHTML=v();renderNav();wire();
+ if(sig===lastViewSig)window.scrollTo(0,y);else window.scrollTo(0,0);
+ lastViewSig=sig;
 }
 const NAVICONS={
  heute:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>',
@@ -599,18 +647,26 @@ function bar(label,cons,tgt,unit,over){
 
 /* ---- Heute ---- */
 function viewHeute(){
- const ts=state.shiftByDate[todayKey()]||null;
+ const ts=effShift(todayKey());
+ const fromRota=!state.shiftByDate[todayKey()]&&!!rotaShift(todayKey());
  const wk=new Date();wk.setDate(wk.getDate()-6);
  const sess=state.history.filter(h=>new Date(h.date)>=wk).length;
  const kg=latestKg(),nd=dayById(state.nextDayId),tg=targets(),con=consumedToday();
  const chips=Object.entries(SHIFTS).map(([k,v])=>`<button class="chip${ts===k?' chip--on':''}" data-shift="${k}">${v.label}</button>`).join("");
+ let preview="";
+ if(rotaShift(todayKey())){
+  const days=[];const wd=["So","Mo","Di","Mi","Do","Fr","Sa"];
+  const sh={frueh:"F",spaet:"S",nacht:"N",frei:"–"};
+  for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()+i);const key=d.toISOString().slice(0,10);const s=effShift(key);days.push(`<div class="rotaday${i===0?' rotaday--today':''}"><span class="rd-wd">${i===0?"Heute":wd[d.getDay()]}</span><span class="rd-s">${s?sh[s]:"—"}</span></div>`);}
+  preview=`<div class="rotaprev">${days.join("")}</div><p class="muted sm" style="margin:8px 0 0">F Früh · S Spät · N Nacht · – Frei. ${fromRota?"Automatisch aus deinem Schichtrhythmus — Tipp auf eine Schicht überschreibt nur heute.":"Heute manuell gewählt."}</p>`;
+ }else if(!ts)preview=`<p class="muted sm" style="margin:10px 0 0">Tipp: Unter „Mehr" → „Schichtplan" hinterlegst du deinen Schicht-Rhythmus einmal — dann wählt Hermes die Schicht jeden Tag automatisch.</p>`;
  let hero;
  if(ts){const s=SHIFTS[ts];hero=`<section class="card hero"><div class="hero-tag">${s.label}schicht</div><div class="hero-when">${s.when}</div><p class="hero-note">${s.note}</p>${s.train?`<button class="btn" data-go="training">${esc(nd.label)} starten</button>`:`<div class="hero-rest">Heute leicht halten.</div>`}</section>`;}
  else hero=`<section class="card hero hero--empty">Wähl oben deine Schicht — dann zeigt dir Hermes, wann und wie der Tag am besten läuft.</section>`;
  const nutcard=tg?`<section class="card"><div class="between" style="margin-bottom:12px"><div class="eyebrow" style="margin:0">Heute gegessen</div><button class="btn-ghost btn btn-sm" style="width:auto;padding:7px 12px" data-go="essen">Öffnen</button></div>${bar("Kalorien",con.kcal,tg.kcal,"kcal",true)}${bar("Protein",con.p,tg.p,"g")}</section>`
    :`<section class="card"><div class="eyebrow">Ernährung</div><p class="muted">Gib dein Profil (unter „Mehr") und dein Gewicht ein, dann berechnet Hermes deinen Tagesbedarf.</p></section>`;
  return `<div class="stack">
-  <section class="card"><div class="eyebrow">Welche Schicht heute</div><div class="shiftrow">${chips}</div></section>
+  <section class="card"><div class="eyebrow">Welche Schicht heute</div><div class="shiftrow">${chips}</div>${preview}</section>
   ${hero}
   <div class="grid2">
    <section class="card stat"><div class="stat-num">${sess}</div><div class="stat-lbl">Einheiten /<br>7 Tage</div></section>
@@ -644,7 +700,7 @@ function viewTraining(){
   else if(pr)lbTxt=`<div class="lastline">★ Rekord: <b>${esc(prTxt(pr))}</b></div>`;
   const rows=ex.sets.map((s,si)=>`<div class="setrow${s.done?' setrow--done':''}" data-row="${ei}-${si}"><span class="setnum">${si+1}</span><input class="inp" type="number" inputmode="decimal" placeholder="${noW?'—':'0'}" value="${esc(s.weight)}" ${noW?'disabled':''} data-f="weight" data-ei="${ei}" data-si="${si}"><input class="inp" type="number" inputmode="numeric" placeholder="0" value="${esc(s.reps)}" data-f="reps" data-ei="${ei}" data-si="${si}"><button class="check${s.done?' check--on':''}" data-check="${ei}-${si}">✓</button></div>`).join("");
   const steps=(ex.steps&&ex.steps.length)?`<details class="steps"><summary>Anleitung</summary><ol>${ex.steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ol></details>`:"";
-  return `<section class="card"><div class="ex-head"><div class="ex-name">${esc(ex.name)}</div><div class="ex-target">${ex.sets.length} × ${esc(ex.reps)}</div></div>${lbTxt}${steps}<div class="sethead"><span>Satz</span><span>${u.w}</span><span>${u.r}</span><span>✓</span></div>${rows}<button class="restbtn" data-startrest="1">⧖ Pause (${state.settings.rest}s)</button></section>`;
+  return `<section class="card"><div class="ex-head"><div class="ex-name" data-exinfo="${esc(ex.name)}">${esc(ex.name)} <span class="ex-i">ⓘ</span></div><div class="ex-target">${ex.sets.length} × ${esc(ex.reps)}</div></div>${lbTxt}${steps}<div class="sethead"><span>Satz</span><span>${u.w}</span><span>${u.r}</span><span>✓</span></div>${rows}<div class="minirow" style="gap:8px;margin-top:10px"><button class="setbtn" data-addset="${ei}">+ Satz</button><button class="setbtn" data-delset="${ei}" ${ex.sets.length<=1?"disabled":""}>− Satz</button><button class="restbtn" style="margin-top:0;flex:1" data-startrest="1">⧖ Pause (${state.settings.rest}s)</button></div></section>`;
  }).join("");
  const {done,total}=counts();
  return `<div class="stack">
@@ -663,6 +719,52 @@ function prCard(){
  const rows=names.sort((a,b)=>state.prs[b].date.localeCompare(state.prs[a].date)).map(n=>{const p=state.prs[n];return `<div class="pritem"><span class="prstar">★</span><div style="flex:1"><div class="prname">${esc(n)}</div><div class="prdet"><b>${esc(prTxt(p))}</b> · ${fmtFull(p.date)}</div></div><button class="del" data-delpr="${esc(n)}">✕</button></div>`;}).join("");
  return `<section class="card"><div class="eyebrow">★ Persönliche Rekorde</div><div class="prlist">${rows}</div><p class="muted sm" style="margin-top:8px">Bei kg-Übungen zählt die stärkste Kombination aus Gewicht × Wiederholungen.</p></section>`;
 }
+/* ---- Übungs-Info-Fenster (Muskel-Grafik + Anleitung) ---- */
+const ALLM=["schultern","brust","bizeps","core","quads","ruecken","trizeps","po","beinbeuger","waden"];
+const MUSCLE_MAP={"Beine":["quads","beinbeuger","waden"],"Po":["po","beinbeuger"],"Brust":["brust","schultern","trizeps"],"Rücken":["ruecken","bizeps"],"Schultern":["schultern","trizeps"],"Bizeps":["bizeps"],"Trizeps":["trizeps"],"Core":["core"],"Ganzkörper / Zuhause":ALLM,"Cardio":ALLM,"Mobility / Dehnen":ALLM};
+function bodySVG(active){
+ const on=k=>active.includes(k)?"m-on":"m-off";
+ const fig=(cx,back)=>{
+  let s=`<circle cx="${cx}" cy="20" r="10" class="b-base"/><rect x="${cx-6}" y="30" width="12" height="7" class="b-base"/>`;
+  // Rumpf
+  s+=back?`<rect x="${cx-19}" y="36" width="38" height="46" rx="9" class="${on("ruecken")}"/>`
+        :`<rect x="${cx-19}" y="36" width="38" height="60" rx="9" class="b-base"/>`;
+  if(!back)s+=`<ellipse cx="${cx-9}" cy="50" rx="9" ry="8" class="${on("brust")}"/><ellipse cx="${cx+9}" cy="50" rx="9" ry="8" class="${on("brust")}"/><rect x="${cx-11}" y="62" width="22" height="30" rx="5" class="${on("core")}"/>`;
+  else s+=`<rect x="${cx-19}" y="84" width="38" height="12" rx="6" class="b-base"/>`;
+  // Schultern
+  s+=`<circle cx="${cx-22}" cy="41" r="7" class="${back?on("schultern"):on("schultern")}"/><circle cx="${cx+22}" cy="41" r="7" class="${on("schultern")}"/>`;
+  // Oberarme
+  const arm=back?"trizeps":"bizeps";
+  s+=`<ellipse cx="${cx-27}" cy="58" rx="6" ry="12" class="${on(arm)}"/><ellipse cx="${cx+27}" cy="58" rx="6" ry="12" class="${on(arm)}"/>`;
+  // Unterarme
+  s+=`<ellipse cx="${cx-29}" cy="82" rx="5" ry="11" class="b-base"/><ellipse cx="${cx+29}" cy="82" rx="5" ry="11" class="b-base"/>`;
+  // Po (nur hinten)
+  if(back)s+=`<ellipse cx="${cx-8}" cy="102" rx="9" ry="8" class="${on("po")}"/><ellipse cx="${cx+8}" cy="102" rx="9" ry="8" class="${on("po")}"/>`;
+  // Oberschenkel
+  const th=back?"beinbeuger":"quads";
+  s+=`<ellipse cx="${cx-10}" cy="${back?128:124}" rx="8" ry="21" class="${on(th)}"/><ellipse cx="${cx+10}" cy="${back?128:124}" rx="8" ry="21" class="${on(th)}"/>`;
+  // Unterschenkel
+  s+=`<ellipse cx="${cx-10}" cy="168" rx="6" ry="15" class="${back?on("waden"):"b-base"}"/><ellipse cx="${cx+10}" cy="168" rx="6" ry="15" class="${back?on("waden"):"b-base"}"/>`;
+  s+=`<text class="axis" x="${cx}" y="198" text-anchor="middle">${back?"Rückseite":"Vorderseite"}</text>`;
+  return s;
+ };
+ return `<svg viewBox="0 0 220 202" class="body">${fig(58,false)}${fig(162,true)}</svg>`;
+}
+function findExMeta(name){
+ for(const g in EXLIB){const e=EXLIB[g].find(x=>x[0]===name);if(e)return {group:g,steps:e.slice(1)};}
+ for(const d of state.plan){const e=d.exercises.find(x=>x.name===name);if(e)return {group:null,steps:e.steps||[]};}
+ return {group:null,steps:[]};
+}
+function openExInfo(name){
+ const m=findExMeta(name),keys=m.group?(MUSCLE_MAP[m.group]||[]):[];
+ const pr=state.prs[name],lb=state.lastBest[name];
+ const steps=m.steps.length?`<div class="exm-sec">So geht's</div><ol class="exm-steps">${m.steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ol>`:`<p class="muted sm" style="margin:10px 0 0">Für diese Übung ist keine Anleitung hinterlegt.</p>`;
+ const stats=(pr||lb)?`<div class="exm-sec">Deine Werte</div><p class="exm-stats">${pr?`★ Rekord: <b>${esc(prTxt(pr))}</b>`:""}${pr&&lb?" · ":""}${lb?`Letztes Mal: <b>${lb.unit==="kg"?esc(lb.weight||"—")+" kg × "+esc(lb.reps||"—"):esc(lb.reps||"—")+" "+(UNITS[lb.unit]?UNITS[lb.unit].r:"")}</b>`:""}</p>`:"";
+ document.getElementById("exmodalCard").innerHTML=`<div class="exm-head"><div class="exm-title">${esc(name)}</div><button class="iconbtn" id="exmClose">✕</button></div>${m.group?`<div class="exm-group">${esc(m.group)}</div>`:""}${keys.length?bodySVG(keys):""}${stats}${steps}`;
+ document.getElementById("exmodal").classList.add("on");
+ document.getElementById("exmClose").onclick=closeExInfo;
+}
+function closeExInfo(){document.getElementById("exmodal").classList.remove("on");}
 function viewDone(){
  const order=state.plan.map(d=>d.id),i=order.indexOf(state.trainDayId),next=dayById(order[(i+1)%order.length]);
  const prHtml=state.lastPRs.length?`<div class="prlist">${state.lastPRs.map(p=>`<div class="pritem"><span class="prstar">★</span><div><div class="prname">${esc(p.name)}</div><div class="prdet">Neuer Bestwert: <b>${esc(prTxt(p))}</b>${p.prev?` <span class="prold">(vorher ${esc(prTxt(p.prev))})</span>`:""}</div></div></div>`).join("")}</div>`:"";
@@ -720,7 +822,7 @@ function viewEssen(){
   <section class="card"><div class="eyebrow">Heute gegessen</div>${list}</section>
   ${weekCard(tg)}
   ${trendCard(tg)}
-  <section class="card"><div class="eyebrow">Wasser</div>${bar("Wasser",con.water,tg.water,"ml")}<div class="water-btns" style="margin-top:8px"><button data-water="250">+250 ml</button><button data-water="500">+500 ml</button><button data-water="-250">−250</button></div></section>
+  <section class="card"><div class="eyebrow">Wasser</div>${bar("Wasser",con.water,tg.water,"ml")}<div class="water-btns" style="margin-top:8px"><button data-water="250">+250 ml</button><button data-water="500">+500 ml</button><button data-water="-250">−250 ml</button></div></section>
   <section class="card"><div class="eyebrow">Makronährstoffe</div>${macros}</section>
   <section class="card"><div class="eyebrow">Vitamine & Mineralien</div>${micros}<p class="muted sm" style="margin-top:6px">Richtwerte für Erwachsene (DGE, ca.). Nährwerte der Lebensmittel sind Näherungswerte pro 100 g.</p></section>
  </div>`;
@@ -857,7 +959,7 @@ async function lookupBarcode(code){
   n.kcal=Math.round(kcal||0);n.p=+(nu.proteins_100g||0);n.c=+(nu.carbohydrates_100g||0);n.f=+(nu.fat_100g||0);n.fib=+(nu.fiber_100g||0);n.vc=Math.round((nu["vitamin-c_100g"]||0)*1000);
   if(!state.customFoods.find(f=>f.name===name)){state.customFoods=[...state.customFoods,{name,n}];save(K.custom,state.customFoods);}
   closeScanner();
-  state.tab="essen";state.foodPicker=true;state.scanAdded=name;render();
+  state.tab="essen";state.foodPicker=true;state.scanAdded=name;render();window.scrollTo(0,0);
  }catch(e){setScanStatus("Netzwerkfehler — Internet nötig für die Produktsuche. Später erneut versuchen.");}
 }
 function initScanner(){
@@ -893,9 +995,25 @@ function viewMehr(){
   <p class="muted sm" style="margin:0 2px 2px">Einstellungen. Trainingsplan &amp; Verlauf findest du im Tab „Training", Essen &amp; Wasser unter „Essen".</p>
   ${acc("theme","Darstellung",themeEditor())}
   ${acc("profile","Profil & Ziel",profileEditor())}
+  ${acc("rota","Schichtplan (Rhythmus)",rotaEditor())}
   ${acc("goals","Feineinstellungen: Protein & Pause",goalsEditor())}
   ${acc("data","Daten sichern",dataEditor())}
  </div>`;
+}
+function rotaEditor(){
+ const r=state.rota,order=["frueh","spaet","nacht","frei"];
+ const seq=r.seq.map((s,i)=>`<button class="rotachip" data-rotacycle="${i}"><span class="rc-n">${i+1}</span>${SHIFTS[s]?SHIFTS[s].label:"?"}</button>`).join("");
+ return `<p class="muted sm" style="margin-top:0">Dein wiederkehrender Schichtzyklus. Tag antippen = Schicht wechseln (Früh → Spät → Nacht → Frei). „Heute" wählt die Schicht dann automatisch.</p>
+  <span class="lbl-sm">Zyklus-Start (Tag 1 deines Rhythmus)</span>
+  <input class="inp" type="date" id="rotaStart" value="${esc(r.start||"")}" style="text-align:left;max-width:200px">
+  <span class="lbl-sm">Zyklus (${r.seq.length} Tage)</span>
+  <div class="rotaseq">${seq||'<span class="muted sm">Noch keine Tage — unten hinzufügen oder Vorlage nehmen.</span>'}</div>
+  <div class="minirow" style="gap:8px;margin-top:10px">
+   <button class="btn btn-ghost btn-sm" style="flex:1" data-rotaadd="1">+ Tag</button>
+   <button class="btn btn-ghost btn-sm" style="flex:1" data-rotadel="1" ${r.seq.length?"":"disabled"}>− Tag</button>
+  </div>
+  <button class="btn btn-ghost btn-sm" data-rotapreset="1" style="margin-top:8px">Vorlage: 2× Früh · 2× Spät · 2× Nacht · 2× Frei</button>
+  ${r.seq.length?`<button class="btn btn-ghost btn-sm" data-rotaclear="1" style="margin-top:8px">Rhythmus löschen</button>`:""}`;
 }
 function wizNote(f){return {aufbau:"Fokus auf Kraft & Muskel: 8–12 Wiederholungen, Grundübungen.",fettabbau:"Muskeln halten und Kalorien verbrennen: 12–15 Wdh. plus lockerer Cardio-Abschluss je Einheit.",beides:"Mischung aus beidem: 10–12 Wdh., Cardio an jedem zweiten Tag."}[f];}
 function wizEditor(){
@@ -938,7 +1056,7 @@ function viewLibrary(){
  for(const g in EXLIB){
   const items=EXLIB[g].map(e=>{
    const steps=e.slice(1);
-   return `<div class="exlib-item ex-item" data-name="${esc(e[0].toLowerCase())}"><div class="between"><div class="pn" style="font-weight:600">${esc(e[0])}</div><button class="pick-add" data-libadd="${esc(e[0])}">+</button></div><details class="steps"><summary>Anleitung</summary><ol>${steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ol></details></div>`;
+   return `<div class="exlib-item ex-item" data-name="${esc(e[0].toLowerCase())}"><div class="between"><div class="pn" style="font-weight:600;cursor:pointer" data-exinfo="${esc(e[0])}">${esc(e[0])} <span class="ex-i">ⓘ</span></div><button class="pick-add" data-libadd="${esc(e[0])}">+</button></div><details class="steps"><summary>Anleitung</summary><ol>${steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ol></details></div>`;
   }).join("");
   html+=`<div class="libgroup" data-group="${esc(g)}"><div class="grouphdr">${esc(g)}</div>${items}</div>`;
  }
@@ -968,6 +1086,9 @@ function wire(){
  main.querySelectorAll('input[data-f]').forEach(inp=>inp.oninput=()=>{state.log[+inp.dataset.ei].sets[+inp.dataset.si][inp.dataset.f]=inp.value;});
  main.querySelectorAll("[data-check]").forEach(btn=>btn.onclick=()=>{const [ei,si]=btn.dataset.check.split("-").map(Number);const s=state.log[ei].sets[si];s.done=!s.done;btn.classList.toggle("check--on",s.done);const r=main.querySelector(`[data-row="${ei}-${si}"]`);if(r)r.classList.toggle("setrow--done",s.done);updateProgress();if(s.done&&state.settings.rest>0)startRest();});
  main.querySelectorAll("[data-startrest]").forEach(b=>b.onclick=startRest);
+ main.querySelectorAll("[data-addset]").forEach(b=>b.onclick=()=>{state.log[+b.dataset.addset].sets.push({weight:"",reps:"",done:false});render();});
+ main.querySelectorAll("[data-delset]").forEach(b=>b.onclick=()=>{const ex=state.log[+b.dataset.delset];if(ex.sets.length>1){ex.sets.pop();render();}});
+ main.querySelectorAll("[data-exinfo]").forEach(el=>el.onclick=()=>openExInfo(el.dataset.exinfo));
  const note=document.getElementById("noteInp");if(note)note.oninput=()=>{state.note=note.value;};
  const sv=main.querySelector("[data-save]");if(sv)sv.onclick=finish;
  const pr=main.querySelector("[data-prepare]");if(pr)pr.onclick=()=>switchDay(pr.dataset.prepare);
@@ -994,6 +1115,13 @@ function wire(){
  const pfH=document.getElementById("pfH");if(pfH)pfH.oninput=()=>{state.profile.height=+pfH.value||0;sPr();};
  const pfAct=document.getElementById("pfAct");if(pfAct)pfAct.onchange=()=>{state.profile.activity=+pfAct.value;sPr();};
  const pfGoal=document.getElementById("pfGoal");if(pfGoal)pfGoal.onchange=()=>{state.profile.goal=pfGoal.value;sPr();};
+ // Schichtplan
+ const rs=document.getElementById("rotaStart");if(rs)rs.onchange=()=>{state.rota={...state.rota,start:rs.value};save(K.rota,state.rota);};
+ main.querySelectorAll("[data-rotacycle]").forEach(b=>b.onclick=()=>{const i=+b.dataset.rotacycle;const order=["frueh","spaet","nacht","frei"];state.rota.seq[i]=order[(order.indexOf(state.rota.seq[i])+1)%4];save(K.rota,state.rota);render();});
+ const ra=main.querySelector("[data-rotaadd]");if(ra)ra.onclick=()=>{state.rota.seq.push("frei");if(!state.rota.start)state.rota.start=todayKey();save(K.rota,state.rota);render();};
+ const rd=main.querySelector("[data-rotadel]");if(rd)rd.onclick=()=>{state.rota.seq.pop();save(K.rota,state.rota);render();};
+ const rp=main.querySelector("[data-rotapreset]");if(rp)rp.onclick=()=>{state.rota={start:state.rota.start||todayKey(),seq:["frueh","frueh","spaet","spaet","nacht","nacht","frei","frei"]};save(K.rota,state.rota);render();};
+ const rc=main.querySelector("[data-rotaclear]");if(rc)rc.onclick=()=>{if(!confirm("Schichtrhythmus löschen?"))return;state.rota={start:"",seq:[]};save(K.rota,state.rota);render();};
  // plan
  main.querySelectorAll("[data-daylabel]").forEach(i=>i.oninput=()=>{dayById(i.dataset.daylabel).label=i.value;sP();});
  main.querySelectorAll("[data-exname]").forEach(i=>i.oninput=()=>{const[di,ei]=i.dataset.exname.split("|");const e=findEx(di,ei);if(e){e.name=i.value;sP();}});
@@ -1044,7 +1172,7 @@ function reloadState(){
  state.plan=load(K.plan,defaultPlan());state.settings=Object.assign({theme:"obsidian",rest:90,protein:1.9},load(K.settings,{}));
  state.profile=Object.assign({sex:"m",age:30,height:180,activity:1.375,goal:"abnehmen"},load(K.profile,{}));
  state.bodyweight=load(K.weight,[]);state.history=load(K.history,[]);state.lastBest=load(K.last,{});state.prs=load(K.pr,{});state.lastPRs=[];
- state.shiftByDate=load(K.shifts,{});state.nextDayId=load(K.nextDay,null);state.foodLog=load(K.food,{});state.waterLog=load(K.water,{});state.customFoods=load(K.custom,[]);
+ state.shiftByDate=load(K.shifts,{});state.nextDayId=load(K.nextDay,null);state.foodLog=load(K.food,{});state.waterLog=load(K.water,{});state.customFoods=load(K.custom,[]);state.rota=load(K.rota,{start:"",seq:[]});
  if(!state.plan.length)state.plan=defaultPlan();if(!state.plan.find(d=>d.id===state.nextDayId))state.nextDayId=state.plan[0].id;
  state.trainDayId=state.nextDayId;state.log=buildLog(state.nextDayId);state.saved=false;state.note="";state.acc={};state.libFor=null;state.foodPicker=false;
  applyTheme();render();
@@ -1057,6 +1185,9 @@ try{document.getElementById("appleicon").href=buildIcon(192);}catch(e){console.w
 
 /* Service Worker für Offline-Nutzung registrieren. */
 if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(e=>console.warn("SW:",e));});}
+
+const exmodalEl=document.getElementById("exmodal");
+exmodalEl.onclick=e=>{if(e.target===exmodalEl)closeExInfo();};
 
 applyTheme();initScanner();render();
 </script>

@@ -98,6 +98,7 @@ hermes:food      { "YYYY-MM-DD": [foodEntries] }
 hermes:water     { "YYYY-MM-DD": ml }
 hermes:custom    eigene Lebensmittel
 hermes:pr        persönliche Rekorde { übungsname: {score, weight, reps, unit, date} }
+hermes:rota      Schichtrhythmus { start: "YYYY-MM-DD", seq: [shiftKey, …] }
 ```
 
 ## Datenmodelle
@@ -125,6 +126,18 @@ hermes:pr        persönliche Rekorde { übungsname: {score, weight, reps, unit,
   beim Speichern erkannt (`state.lastPRs` → Anzeige in `viewDone`), Liste unter
   Training → Verlauf, Anzeige „★ Rekord" in der Übungskarte.
 - `NAVICONS` / `kcalRing()` — monochrome SVG-Icons in der Tab-Leiste, Kalorien-Ring im Essen-Tab.
+- `rotaShift(date)` / `effShift(date)` / `rotaEditor()` — Schichtrhythmus (`hermes:rota`):
+  wiederholender Zyklus ab Startdatum, Editor unter „Mehr" → Schichtplan (Tag antippen =
+  Schicht durchwechseln, Vorlage 2-2-2-2). „Heute" nutzt `effShift` (manuelle Wahl in
+  `hermes:shifts` überschreibt den Rhythmus tagesweise), inkl. 7-Tage-Vorschau.
+- `openExInfo(name)` / `bodySVG()` / `MUSCLE_MAP` / `findExMeta()` — Übungs-Info-Fenster
+  (Bottom-Sheet `#exmodal`, statisch im Body, imperativ): Muskel-Grafik (Vorder-/Rückseite,
+  beanspruchte Muskeln hervorgehoben), eigene Werte (Rekord/letztes Mal), Anleitung.
+  Öffnet per Tipp auf Übungsnamen (Training-Log + Bibliothek, `data-exinfo`).
+- Im Session-Log: „+ Satz" / „− Satz" je Übung (`data-addset`/`data-delset`, nur Session,
+  ändert den Plan nicht).
+- `render()` merkt sich die Ansicht (`lastViewSig`): Re-Render in derselben Ansicht behält
+  die Scroll-Position, nur echte Ansichtswechsel scrollen nach oben.
 - `FOODS` / `FKEYS` / `foodObj()` — Lebensmittel-Datenbank.
 - `PORTIONS` — optionale Portionsvorlagen je Lebensmittel `{ name: [[label, gramm], …] }`.
   Werden im Food-Picker als Ein-Tipp-Chips angezeigt.
