@@ -67,17 +67,21 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 ## Tabs / Views
 
 - `heute` — Schicht wählen → Empfehlung; Mini-Stats; Mini-Ernährungsübersicht.
-- `training` — Session-Logging (Sätze: Gewicht/Wdh./erledigt), Tag-Wechsel,
-  Pausen-Timer, Notizfeld, Übungs-Anleitungen (`<details>`).
+- `training` — Unternavigation (`state.trainView`: `log` | `plan` | `hist`, via `trainNav()`):
+  - **Einheit** (`log`): Session-Logging (Sätze: Gewicht/Wdh./erledigt), Tag-Wechsel,
+    Pausen-Timer, Notizfeld, Übungs-Anleitungen (`<details>`).
+  - **Plan** (`plan`): **Plan-Assistent** (`wizEditor`, generiert Plan nach Ziel + Tagen)
+    + **Plan bearbeiten** (`planEditor`, inkl. Übungs-Bibliothek `viewLibrary`).
+  - **Verlauf** (`hist`): Trainings-Historie (`histEditor`).
 - `essen` — Ernährungs-Tracker: Tagesbedarf vs. Konsum (Makros + Mikros + Wasser),
   Essen aus Datenbank hinzufügen (`viewFoodPicker`, inkl. Portions-Chips **und
   Barcode-Scan**), eigene Lebensmittel, 7-Tage-Wochenverlauf (`weekCard`) und
   14-Tage-Makro-Verlaufskurve (`trendCard`, umschaltbar kcal/Protein/KH/Fett).
 - `gewicht` — Gewicht eintragen, Verlaufskurve (selbstgezeichnetes SVG), Einträge löschen.
-- `mehr` — Editor/Einstellungen als Akkordeon: Profil, **Plan-Assistent** (`wizEditor`,
-  generiert Plan nach Ziel + Tagen), Trainingsplan-Editor (inkl. Übungs-Bibliothek
-  `viewLibrary`), Protein/Pause, Theme, Trainings-Verlauf,
-  Daten sichern (Datei-Download/-Upload + Copy-Export/Import/Reset).
+- `mehr` — **nur Einstellungen** als Akkordeon: Darstellung (Theme), Profil & Ziel
+  (`profileEditor`, inkl. Ernährungsziel), Feineinstellungen Protein/Pause (`goalsEditor`),
+  Daten sichern (Datei-Download/-Upload + Copy-Export/Import/Reset). Trainingsplan &
+  Verlauf liegen bewusst NICHT hier, sondern im Tab „Training".
 
 ## localStorage-Keys (`K`-Objekt) — NICHT umbenennen (sonst Datenverlust)
 
