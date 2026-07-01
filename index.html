@@ -177,6 +177,19 @@ details.steps li{font-size:13px;line-height:1.5;color:var(--text);margin-bottom:
 .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;display:grid;grid-template-columns:repeat(5,1fr);background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);}
 .navbtn{background:none;border:none;color:var(--muted);font-weight:600;font-size:11px;padding:14px 0 16px;cursor:pointer;border-top:2px solid transparent;margin-top:-1px;}
 .navbtn--on{color:var(--text);border-top-color:var(--text);}
+.scan-added{background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-size:13px;line-height:1.4;margin-bottom:12px;}
+.scan{position:fixed;inset:0;background:#000;z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));}
+.scan.on{display:flex;}
+.scanbox{position:relative;width:100%;max-width:420px;aspect-ratio:4/3;background:#111;border-radius:14px;overflow:hidden;}
+#scanvideo{width:100%;height:100%;object-fit:cover;}
+.scan-frame{position:absolute;inset:22% 12%;border:2px solid rgba(255,255,255,.85);border-radius:10px;}
+.scan-status{color:#fff;font-size:14px;text-align:center;min-height:20px;max-width:420px;line-height:1.4;}
+.scan-actions{display:flex;flex-direction:column;gap:8px;width:100%;max-width:420px;}
+.scan-row{display:flex;gap:8px;}
+.scan-input{flex:1;background:#151515;border:1px solid #333;color:#fff;border-radius:9px;padding:12px;font-size:16px;font-family:inherit;}
+.scan-input:focus{outline:none;border-color:#888;}
+.scan-btn{background:#F2F0EB;color:#0A0A0A;border:none;border-radius:9px;padding:12px 16px;font-weight:700;font-size:14px;cursor:pointer;}
+.scan-btn.ghost{background:transparent;color:#fff;border:1px solid #444;width:100%;}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;}}
 </style>
 </head>
@@ -186,6 +199,14 @@ details.steps li{font-size:13px;line-height:1.5;color:var(--text);margin-bottom:
   <main class="main" id="main"></main>
   <div class="restbar" id="restbar"></div>
   <nav class="nav" id="nav"></nav>
+</div>
+<div class="scan" id="scanoverlay">
+  <div class="scanbox"><video id="scanvideo" playsinline muted></video><div class="scan-frame"></div></div>
+  <div class="scan-status" id="scanStatus">Barcode ruhig vor die Kamera halten …</div>
+  <div class="scan-actions">
+    <div class="scan-row"><input class="scan-input" id="scanManual" type="number" inputmode="numeric" placeholder="oder Barcode-Nummer eintippen"><button class="scan-btn" id="scanSearchBtn">Suchen</button></div>
+    <button class="scan-btn ghost" id="scanCloseBtn">Abbrechen</button>
+  </div>
 </div>
 <script>
 "use strict";
@@ -416,7 +437,7 @@ const state={
  nextDayId:load(K.nextDay,null),shiftByDate:load(K.shifts,{}),
  foodLog:load(K.food,{}),waterLog:load(K.water,{}),customFoods:load(K.custom,[]),
  trainDayId:null,log:null,saved:false,note:"",acc:{},rest:{active:false,left:0,timer:null},
- libFor:null,foodPicker:false,wiz:{focus:"aufbau",days:2},
+ libFor:null,foodPicker:false,wiz:{focus:"aufbau",days:2},trendMetric:"kcal",scanAdded:null,
 };
 if(!state.plan.length)state.plan=defaultPlan();
 if(!state.plan.find(d=>d.id===state.nextDayId))state.nextDayId=state.plan[0].id;
@@ -436,9 +457,11 @@ function targets(){
  const bmr=10*w+6.25*p.height-5*p.age+(p.sex==="m"?5:-161);
  const tdee=bmr*p.activity;
  let kcal=tdee;
- if(p.goal==="abnehmen")kcal-=500; else if(p.goal==="aufbau")kcal+=250;
+ if(p.goal==="abnehmen")kcal-=500; else if(p.goal==="aufbau")kcal+=250; else if(p.goal==="recomp")kcal-=200;
  kcal=Math.round(kcal);
- const prot=Math.round(w*state.settings.protein);
+ // Body Recomp: Erhaltung mit leichtem Defizit + hohes Protein (mind. 2,0 g/kg).
+ const protPerKg=p.goal==="recomp"?Math.max(2.0,state.settings.protein):state.settings.protein;
+ const prot=Math.round(w*protPerKg);
  const fat=Math.round(w*0.8);
  const carbs=Math.max(0,Math.round((kcal-prot*4-fat*9)/4));
  return {kcal,p:prot,c:carbs,f:fat,fib:30,water:Math.round(w*35),
@@ -545,11 +568,12 @@ function viewEssen(){
  const micros=NUT.filter(n=>n.kind==="micro").map(n=>bar(n.l,con[n.k]||0,tg[n.k],n.u)).join("");
  return `<div class="stack">
   <section class="card">
-   <div class="kcal-big"><div class="n">${Math.round(con.kcal)}<span style="font-size:18px;color:var(--muted)"> / ${tg.kcal}</span></div><div class="l">Kalorien heute · Ziel bei „${{abnehmen:"Abnehmen",halten:"Halten",aufbau:"Aufbau"}[state.profile.goal]}"</div></div>
+   <div class="kcal-big"><div class="n">${Math.round(con.kcal)}<span style="font-size:18px;color:var(--muted)"> / ${tg.kcal}</span></div><div class="l">Kalorien heute · Ziel bei „${{abnehmen:"Abnehmen",halten:"Halten",aufbau:"Aufbau",recomp:"Body Recomp"}[state.profile.goal]}"</div></div>
    <button class="btn" data-foodpick="1" style="margin-top:6px">+ Essen hinzufügen</button>
   </section>
   <section class="card"><div class="eyebrow">Heute gegessen</div>${list}</section>
   ${weekCard(tg)}
+  ${trendCard(tg)}
   <section class="card"><div class="eyebrow">Wasser</div>${bar("Wasser",con.water,tg.water,"ml")}<div class="water-btns" style="margin-top:8px"><button data-water="250">+250 ml</button><button data-water="500">+500 ml</button><button data-water="-250">−250</button></div></section>
   <section class="card"><div class="eyebrow">Makronährstoffe</div>${macros}</section>
   <section class="card"><div class="eyebrow">Vitamine & Mineralien</div>${micros}<p class="muted sm" style="margin-top:6px">Richtwerte für Erwachsene (DGE, ca.). Nährwerte der Lebensmittel sind Näherungswerte pro 100 g.</p></section>
@@ -579,7 +603,34 @@ function weekCard(tg){
   </div>
   <p class="muted sm" style="margin-top:8px">Gestrichelt = dein Kalorienziel. Nur Tage mit Einträgen zählen in den Ø.</p></section>`;
 }
-function allFoods(){return [...FOODS.map(foodObj),...state.customFoods];}
+function dayTotals(key){const log=state.foodLog[key]||[];const o={kcal:0,p:0,c:0,f:0};log.forEach(e=>{o.kcal+=e.n.kcal||0;o.p+=e.n.p||0;o.c+=e.n.c||0;o.f+=e.n.f||0;});return o;}
+function trendCard(tg){
+ const N=14,days=[];
+ for(let i=N-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const key=d.toISOString().slice(0,10);days.push({key,...dayTotals(key)});}
+ if(days.filter(d=>d.kcal>0).length<2)return `<section class="card"><div class="eyebrow">Verlauf · 14 Tage</div><p class="muted sm">Sobald du an mindestens zwei Tagen Essen einträgst, erscheint hier die Verlaufskurve für Kalorien und Makros.</p></section>`;
+ const metrics={kcal:["Kalorien","kcal",tg.kcal],p:["Protein","g",tg.p],c:["Kohlenh.","g",tg.c],f:["Fett","g",tg.f]};
+ const m=metrics[state.trendMetric]?state.trendMetric:"kcal",[ml,mu,mt]=metrics[m];
+ const chips=Object.entries(metrics).map(([k,v])=>`<button class="chip${m===k?' chip--on':''}" data-trend="${k}" style="padding:9px 2px">${v[0]}</button>`).join("");
+ const chart=trendChart(days.map(d=>({date:d.key,v:d[m],has:d.kcal>0})),mt);
+ return `<section class="card"><div class="eyebrow">Verlauf · 14 Tage</div>
+  <div class="shiftrow" style="margin-bottom:12px">${chips}</div>
+  ${chart}
+  <p class="muted sm" style="margin-top:8px">Tageswerte für ${ml}. Gestrichelt = Ziel (${Math.round(mt)} ${mu}). Punkte = Tage mit Einträgen.</p></section>`;
+}
+function trendChart(pts,target){
+ const W=440,H=180,pad={t:12,r:12,b:22,l:38},xs=W-pad.l-pad.r,ys=H-pad.t-pad.b,N=pts.length;
+ const data=pts.map((p,i)=>({i,...p})).filter(p=>p.has);
+ const vals=data.map(p=>p.v).concat([target]);
+ let min=Math.min(...vals),max=Math.max(...vals);if(min===max){min-=1;max+=1;}else{const mm=(max-min)*0.15;min-=mm;max+=mm;}min=Math.max(0,min);
+ const px=i=>pad.l+(N===1?xs/2:(i/(N-1))*xs),py=v=>pad.t+ys-((v-min)/((max-min)||1))*ys;
+ const line=data.map(p=>`${px(p.i).toFixed(1)},${py(p.v).toFixed(1)}`).join(" ");
+ const dots=data.map(p=>`<circle cx="${px(p.i).toFixed(1)}" cy="${py(p.v).toFixed(1)}" r="2.3" fill="var(--text)"/>`).join("");
+ const ty=py(target),tline=`<line x1="${pad.l}" y1="${ty.toFixed(1)}" x2="${W-pad.r}" y2="${ty.toFixed(1)}" stroke="var(--muted)" stroke-dasharray="4 3"/>`;
+ const yl=[max,min].map(v=>{const y=py(v);return `<text class="axis" x="2" y="${(y+3).toFixed(1)}">${Math.round(v)}</text>`;}).join("");
+ const xl=`<text class="axis" x="${px(0).toFixed(1)}" y="${H-6}">${fmtDate(pts[0].date)}</text><text class="axis" x="${px(N-1).toFixed(1)}" y="${H-6}" text-anchor="end">${fmtDate(pts[N-1].date)}</text>`;
+ return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block">${tline}${yl}<polyline points="${line}" fill="none" stroke="var(--text)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${dots}${xl}</svg>`;
+}
+function allFoods(){return [...state.customFoods,...FOODS.map(foodObj)];}
 function viewFoodPicker(){
  const foods=allFoods();
  const items=foods.map((f,i)=>{
@@ -587,9 +638,12 @@ function viewFoodPicker(){
   const chips=pt?`<div class="portrow">${pt.map(([l,g])=>`<button class="portchip" data-portadd="${i}|${g}">+ ${esc(l)}</button>`).join("")}</div>`:"";
   return `<div class="pick-item food-item" data-name="${esc(f.name.toLowerCase())}"><div class="pick-left"><div class="pn">${esc(f.name)}</div><div class="pmeta">${Math.round(f.n.kcal)} kcal · ${f.n.p}g P · ${f.n.c}g KH · ${f.n.f}g F / 100g</div>${chips}</div><div class="gramrow"><input class="gram-inp" type="number" inputmode="numeric" value="100" data-gram="${i}"><button class="pick-add" data-addfood="${i}">+</button></div></div>`;
  }).join("");
+ const banner=state.scanAdded?`<div class="scan-added">✓ „${esc(state.scanAdded)}" angelegt — oben in der Liste, Menge wählen und + tippen.</div>`:"";
  return `<div class="stack">
   <section class="card">
    <div class="between" style="margin-bottom:12px"><div class="eyebrow" style="margin:0">Essen hinzufügen</div><button class="btn btn-ghost btn-sm" style="width:auto;padding:7px 12px" data-foodback="1">Fertig</button></div>
+   <button class="btn" data-scanopen="1" style="margin-bottom:12px">📷 Barcode scannen</button>
+   ${banner}
    <input class="searchbar" id="foodSearch" placeholder="Lebensmittel suchen …">
    <div id="foodList">${items}</div>
   </section>
@@ -607,6 +661,50 @@ function addFood(idx,grams){
  const n={};FKEYS.forEach(k=>n[k]=(f.n[k]||0)*g/100);
  const day=todayKey();const arr=state.foodLog[day]?[...state.foodLog[day]]:[];
  arr.push({name:f.name,grams:g,n});state.foodLog={...state.foodLog,[day]:arr};save(K.food,state.foodLog);
+}
+
+/* ---- Barcode-Scanner (Open Food Facts) ---- */
+let scanStream=null,scanTimer=null;
+function setScanStatus(t){const el=document.getElementById("scanStatus");if(el)el.textContent=t;}
+async function openScanner(){
+ const ov=document.getElementById("scanoverlay");ov.classList.add("on");
+ const mi=document.getElementById("scanManual");if(mi)mi.value="";
+ if(!("BarcodeDetector"in window)){setScanStatus("Live-Scan geht in diesem Browser nicht — bitte Barcode-Nummer unten eintippen.");return;}
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){setScanStatus("Keine Kamera verfügbar — bitte Barcode-Nummer unten eintippen.");return;}
+ setScanStatus("Barcode ruhig vor die Kamera halten …");
+ try{
+  scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
+  const v=document.getElementById("scanvideo");v.srcObject=scanStream;await v.play();
+  let detector;try{detector=new BarcodeDetector({formats:["ean_13","ean_8","upc_a","upc_e","code_128"]});}catch{detector=new BarcodeDetector();}
+  scanTimer=setInterval(async()=>{
+   try{const codes=await detector.detect(v);if(codes&&codes.length){const code=codes[0].rawValue;stopCamera();lookupBarcode(code);}}catch{}
+  },500);
+ }catch(e){setScanStatus("Kamerazugriff abgelehnt oder nicht möglich — bitte Barcode-Nummer unten eintippen.");}
+}
+function stopCamera(){if(scanTimer){clearInterval(scanTimer);scanTimer=null;}if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null;}const v=document.getElementById("scanvideo");if(v)v.srcObject=null;}
+function closeScanner(){stopCamera();const ov=document.getElementById("scanoverlay");if(ov)ov.classList.remove("on");}
+async function lookupBarcode(code){
+ code=String(code||"").trim();if(!code){setScanStatus("Bitte eine Barcode-Nummer eingeben.");return;}
+ setScanStatus("Suche Produkt "+code+" …");
+ try{
+  const r=await fetch("https://world.openfoodfacts.org/api/v2/product/"+encodeURIComponent(code)+".json?fields=product_name,generic_name,brands,nutriments");
+  const j=await r.json();
+  if(j.status!==1||!j.product){setScanStatus("Nicht gefunden ("+code+"). Nummer prüfen oder Produkt unten manuell anlegen.");return;}
+  const p=j.product,nu=p.nutriments||{};
+  let name=(p.product_name||p.generic_name||("Produkt "+code)).trim();
+  if(p.brands)name+=" ("+String(p.brands).split(",")[0].trim()+")";
+  const kcal=nu["energy-kcal_100g"]!=null?nu["energy-kcal_100g"]:(nu["energy_100g"]?nu["energy_100g"]/4.184:0);
+  const n={};FKEYS.forEach(k=>n[k]=0);
+  n.kcal=Math.round(kcal||0);n.p=+(nu.proteins_100g||0);n.c=+(nu.carbohydrates_100g||0);n.f=+(nu.fat_100g||0);n.fib=+(nu.fiber_100g||0);n.vc=Math.round((nu["vitamin-c_100g"]||0)*1000);
+  if(!state.customFoods.find(f=>f.name===name)){state.customFoods=[...state.customFoods,{name,n}];save(K.custom,state.customFoods);}
+  closeScanner();
+  state.tab="essen";state.foodPicker=true;state.scanAdded=name;render();
+ }catch(e){setScanStatus("Netzwerkfehler — Internet nötig für die Produktsuche. Später erneut versuchen.");}
+}
+function initScanner(){
+ const cb=document.getElementById("scanCloseBtn");if(cb)cb.onclick=closeScanner;
+ const sb=document.getElementById("scanSearchBtn");if(sb)sb.onclick=()=>{const mi=document.getElementById("scanManual");stopCamera();lookupBarcode(mi?mi.value:"");};
+ const mi=document.getElementById("scanManual");if(mi)mi.onkeydown=e=>{if(e.key==="Enter"){stopCamera();lookupBarcode(mi.value);}};
 }
 
 /* ---- Gewicht ---- */
@@ -659,7 +757,7 @@ function profileEditor(){
  const p=state.profile,kg=latestKg();
  const sexBtn=(v,l)=>`<button class="btn ${p.sex===v?'':'btn-ghost'} btn-sm" data-sex="${v}">${l}</button>`;
  const actOpt=[[1.2,"Wenig (Büro)"],[1.375,"Leicht aktiv"],[1.55,"Aktiv"],[1.725,"Sehr aktiv"]];
- const goalOpt=[["abnehmen","Abnehmen"],["halten","Halten"],["aufbau","Aufbau"]];
+ const goalOpt=[["abnehmen","Abnehmen"],["halten","Halten"],["aufbau","Aufbau"],["recomp","Body Recomp (Fett ↓ + Muskel ↑)"]];
  return `<div class="grid2" style="margin-bottom:12px">${sexBtn("m","Mann")}${sexBtn("w","Frau")}</div>
   <div class="grid2"><div class="field"><label>Alter</label><input class="inp" type="number" id="pfAge" value="${p.age}"></div><div class="field"><label>Größe (cm)</label><input class="inp" type="number" id="pfH" value="${p.height}"></div></div>
   <div class="field"><label>Aktivität (außerhalb Training)</label><select class="sel" id="pfAct">${actOpt.map(([v,l])=>`<option value="${v}" ${p.activity==v?'selected':''}>${l}</option>`).join("")}</select></div>
@@ -715,7 +813,9 @@ function wire(){
  const pr=main.querySelector("[data-prepare]");if(pr)pr.onclick=()=>switchDay(pr.dataset.prepare);
  // Essen
  const fp=main.querySelector("[data-foodpick]");if(fp)fp.onclick=()=>{state.foodPicker=true;render();};
- const fb=main.querySelector("[data-foodback]");if(fb)fb.onclick=()=>{state.foodPicker=false;render();};
+ const fb=main.querySelector("[data-foodback]");if(fb)fb.onclick=()=>{state.foodPicker=false;state.scanAdded=null;render();};
+ main.querySelectorAll("[data-trend]").forEach(b=>b.onclick=()=>{state.trendMetric=b.dataset.trend;render();});
+ const sc=main.querySelector("[data-scanopen]");if(sc)sc.onclick=openScanner;
  main.querySelectorAll("[data-delfood]").forEach(b=>b.onclick=()=>{const i=+b.dataset.delfood;const day=todayKey();const arr=[...(state.foodLog[day]||[])];arr.splice(i,1);state.foodLog={...state.foodLog,[day]:arr};save(K.food,state.foodLog);render();});
  main.querySelectorAll("[data-water]").forEach(b=>b.onclick=()=>{const day=todayKey();const cur=state.waterLog[day]||0;state.waterLog={...state.waterLog,[day]:Math.max(0,cur+ +b.dataset.water)};save(K.water,state.waterLog);render();});
  main.querySelectorAll("[data-addfood]").forEach(b=>b.onclick=()=>{const i=+b.dataset.addfood;const gi=main.querySelector(`[data-gram="${i}"]`);addFood(i,gi?parseFloat(gi.value):100);state.foodPicker=false;render();});
@@ -796,7 +896,7 @@ try{document.getElementById("appleicon").href=buildIcon(192);}catch(e){console.w
 /* Service Worker für Offline-Nutzung registrieren. */
 if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(e=>console.warn("SW:",e));});}
 
-applyTheme();render();
+applyTheme();initScanner();render();
 </script>
 </body>
 </html>

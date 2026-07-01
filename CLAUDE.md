@@ -21,6 +21,10 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
    drei kleine statische Begleitdateien daneben — `manifest.json`, `icon.svg` und
    `sw.js` (Service Worker). Diese enthalten **keine** App-Logik, nur PWA-Shell.
    Keine weiteren Dateien hinzufügen.
+   *Externe Runtime-Dienste (keine Libraries, kein Build):* der Barcode-Scanner nutzt
+   die im Browser eingebaute `BarcodeDetector`-API und die **Open Food Facts**-API
+   (`world.openfoodfacts.org`) für die Produktsuche — reiner `fetch`-Aufruf zur
+   Laufzeit, nur online. Kein npm-Paket, keine eingebundene JS-Library.
 2. **Kein `localStorage`-Ersatz nötig** — läuft echt im Browser, `localStorage` ist
    erlaubt und gewollt (Daten liegen nur auf dem Gerät).
 3. **Design: schlicht, Schwarz-Weiß (monochrom).** Zwei Themes: `obsidian` (dunkel）
@@ -63,8 +67,9 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 - `training` — Session-Logging (Sätze: Gewicht/Wdh./erledigt), Tag-Wechsel,
   Pausen-Timer, Notizfeld, Übungs-Anleitungen (`<details>`).
 - `essen` — Ernährungs-Tracker: Tagesbedarf vs. Konsum (Makros + Mikros + Wasser),
-  Essen aus Datenbank hinzufügen (`viewFoodPicker`, inkl. Portions-Chips), eigene
-  Lebensmittel, 7-Tage-Wochenverlauf (`weekCard`).
+  Essen aus Datenbank hinzufügen (`viewFoodPicker`, inkl. Portions-Chips **und
+  Barcode-Scan**), eigene Lebensmittel, 7-Tage-Wochenverlauf (`weekCard`) und
+  14-Tage-Makro-Verlaufskurve (`trendCard`, umschaltbar kcal/Protein/KH/Fett).
 - `gewicht` — Gewicht eintragen, Verlaufskurve (selbstgezeichnetes SVG), Einträge löschen.
 - `mehr` — Editor/Einstellungen als Akkordeon: Profil, **Plan-Assistent** (`wizEditor`,
   generiert Plan nach Ziel + Tagen), Trainingsplan-Editor (inkl. Übungs-Bibliothek
@@ -99,6 +104,8 @@ hermes:custom    eigene Lebensmittel
   `[name, kcal, protein, kohlenh, fett, ballast, VitC, VitD, Ca, Fe, Mg, K]` pro 100 g.
   Reihenfolge = `FKEYS`. Werte sind Näherungswerte.
 - **Food-Log-Eintrag:** `{ name, grams, n:{...absolute Nährwerte...} }`
+- **Profil-Ziel** (`profile.goal`): `"abnehmen"` (−500 kcal) | `"halten"` | `"aufbau"`
+  (+250) | `"recomp"` (Body Recomp: −200 kcal + Protein mind. 2,0 g/kg).
 
 ## Wichtige Funktionen / Konstanten
 
@@ -106,11 +113,17 @@ hermes:custom    eigene Lebensmittel
 - `FOODS` / `FKEYS` / `foodObj()` — Lebensmittel-Datenbank.
 - `PORTIONS` — optionale Portionsvorlagen je Lebensmittel `{ name: [[label, gramm], …] }`.
   Werden im Food-Picker als Ein-Tipp-Chips angezeigt.
+- `allFoods()` — Custom-Lebensmittel zuerst, dann `FOODS` (frisch gescannte/eigene oben).
+- `openScanner()` / `lookupBarcode(code)` / `initScanner()` — Barcode-Scan (`BarcodeDetector`
+  + Open Food Facts). Gefundenes Produkt wird als Custom-Food (`hermes:custom`) gespeichert.
+  Overlay `#scanoverlay` liegt statisch im Body und wird imperativ gesteuert (nicht via `render()`).
 - `NUT` — Nährstoff-Definitionen für die Fortschrittsbalken.
 - `targets()` — berechnet Tagesbedarf aus Profil + aktuellem Gewicht:
   BMR (Mifflin-St Jeor) × Aktivität, ± Ziel; Protein aus `settings.protein` g/kg,
   Fett 0,8 g/kg, Rest Kohlenhydrate; Mikro-Richtwerte nach Geschlecht (DGE, ca.).
 - `weekStats()` / `weekCard()` — 7-Tage-Verlauf (kcal-Balken + Ø kcal/Protein) im Essen-Tab.
+- `dayTotals()` / `trendCard()` / `trendChart()` — 14-Tage-Makro-Verlaufskurve (SVG-Linie
+  mit Zielmarke), umschaltbar über `state.trendMetric` (kcal/p/c/f).
 - `PLAN_TEMPLATES` / `generatePlan(focus, days)` — Plan-Assistent unter „Mehr". `focus`:
   `"aufbau"` (Muskelaufbau) | `"fettabbau"` (+ Cardio-Finisher) | `"beides"`; `days` 2–4.
   Steuert Wdh.-Bereich, Sätze und Cardio. UI-Zustand liegt in `state.wiz`.
@@ -123,6 +136,8 @@ hermes:custom    eigene Lebensmittel
 
 - Wiedereinsteiger: Ganzkörper 2–3×/Woche, moderat starten (2–3 Wdh. "im Tank").
 - Fettabbau v. a. über Ernährung: leichtes Defizit (~500 kcal) + Protein 1,8–2,0 g/kg.
+- Body Recomp (Fett ↓ + Muskel ↑ gleichzeitig): nahe Erhaltung (~−200 kcal), Protein
+  hoch (≥ 2,0 g/kg) — passt gut für Wiedereinsteiger ("muscle memory").
 - Schicht-Empfehlungen: Früh → nachmittags trainieren; Spät → vormittags;
   Nacht → nur leicht/Cardio; Frei → beste Einheit, aber 1. Tag nach Nacht = Schlaf.
 - Nährwerte sind Näherungen — im UI so kommuniziert, nicht als exakt verkaufen.
@@ -131,11 +146,12 @@ hermes:custom    eigene Lebensmittel
 
 Erledigt: Portionsvorlagen · größere Lebensmittel-DB · Wochen-Verlauf Kalorien/Makros ·
 PWA offline (manifest.json + Service Worker) · Datei-Export/-Import · Plan-Assistent
-(Muskelaufbau/Fettabbau/Beides + Tage 2–4).
+(Muskelaufbau/Fettabbau/Beides + Tage 2–4) · Barcode-Scan (Open Food Facts) ·
+14-Tage-Makro-Verlaufskurve · Ziel „Body Recomp".
 
 Offen:
-- Lebensmittel-Suche per Barcode; noch mehr Einträge.
-- Verlaufsansicht auch für Makros einzeln / längere Zeiträume.
+- Noch mehr eingebaute Lebensmittel-Einträge.
+- Verlaufsansicht über längere Zeiträume (30/90 Tage) wählbar machen.
 - Geräte-Sync (aktuell nur lokal) — bewusst später, eigener Schritt.
 
 ## Deploy

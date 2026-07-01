@@ -1,7 +1,7 @@
 /* Hermes Service Worker — App-Shell offline cachen.
    Bei jeder Änderung an index.html die CACHE-Version erhöhen (v1 -> v2 …),
    damit Updates auf dem Gerät ankommen. */
-const CACHE = "hermes-v1";
+const CACHE = "hermes-v2";
 const ASSETS = ["./", "./index.html", "./manifest.json", "./icon.svg"];
 
 self.addEventListener("install", e => {
