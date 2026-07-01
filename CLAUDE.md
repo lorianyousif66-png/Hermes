@@ -159,6 +159,8 @@ Offen:
 GitHub Pages: `index.html` (+ `manifest.json`, `icon.svg`, `sw.js`) im Repo-Root,
 Pages auf Branch `main` `/root`. Nach Push ~1 Min live.
 
-**Wichtig bei Updates:** Der Service Worker cached die App-Shell. Nach jeder Änderung
-an `index.html` die `CACHE`-Version in `sw.js` erhöhen (`hermes-v1` → `hermes-v2` …),
-sonst sehen installierte Geräte die alte Version. Auf dem Handy ggf. App neu öffnen.
+**Updates:** Der Service Worker lädt die App-Seite (`index.html`) **"Netzwerk zuerst"** —
+installierte Geräte bekommen mit Internet beim Öffnen automatisch die neueste Version
+(offline die zuletzt gespeicherte). Ein `CACHE`-Bump in `sw.js` (`hermes-v2` → `v3` …)
+ist nur bei größeren Änderungen nötig (z. B. an `manifest.json`/`icon.svg` oder der
+SW-Logik selbst), damit alte Caches sauber weichen.
