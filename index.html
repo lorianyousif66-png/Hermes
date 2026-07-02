@@ -850,7 +850,7 @@ function mealLabel(k){const m=MEALS.find(m=>m[0]===k);return m?m[1]:MEALS[0][1];
 function viewEssen(){
  if(state.foodPicker)return viewFoodPicker();
  const tg=targets();
- if(!tg)return `<div class="stack"><section class="card"><div class="eyebrow">Ernährung</div><p class="muted">Damit Hermes deinen Bedarf berechnet, brauchst du zwei Dinge:</p><p class="muted">1. Dein <b>Gewicht</b> im Tab „Gewicht".<br>2. Dein <b>Profil</b> (Alter, Größe, Geschlecht, Aktivität, Ziel) unter „Mehr".</p><button class="btn" data-go="mehr" style="margin-top:8px">Profil eingeben</button></section></div>`;
+ if(!tg)return `<div class="stack"><section class="card"><div class="eyebrow">Ernährung</div><p class="muted">Für deinen Tagesbedarf fehlt nur noch dein <b>aktuelles Gewicht</b> — damit rechnet Hermes Kalorien und Nährstoffe aus.</p><div class="weighrow" style="margin-top:14px"><input class="inp inp--big" id="kgInput" type="number" inputmode="decimal" placeholder="z. B. 80"><span class="kglabel">kg</span><button class="addbtn" data-addkg="1">Setzen</button></div><p class="muted sm" style="margin-top:12px">Dein Profil (Alter, Größe, Geschlecht, Aktivität, Ziel) ist mit Standardwerten schon gesetzt — anpassen kannst du es unter „Mehr" → „Profil &amp; Ziel". <button class="btn btn-ghost btn-sm" data-go="mehr" style="width:auto;padding:6px 12px;margin-top:8px">Profil anpassen</button></p></section></div>`;
  const con=consumedToday();
  const day=state.foodLog[todayKey()]||[];
  const mealCards=MEALS.map(([mk,ml])=>{
