@@ -536,6 +536,10 @@ function rotaShift(dateStr){
  return r.seq[i];
 }
 function effShift(dateStr){return state.shiftByDate[dateStr]||rotaShift(dateStr)||null;}
+/* Schicht des Vortags (in LOKALER Zeit) — für „1. Tag nach Nacht = Schlaf". */
+function prevShift(dateStr){const [y,m,d]=dateStr.split("-").map(Number);const pd=new Date(y,m-1,d-1);return effShift(dateKey(pd));}
+/* Erster freier Tag direkt nach einem Nacht-Block: heute frei, gestern Nacht. */
+function isRestAfterNight(dateStr){return effShift(dateStr)==="frei"&&prevShift(dateStr)==="nacht";}
 /* Nach Rhythmus-Änderungen manuelle Tages-Overrides ab heute entfernen,
    damit der neue Rhythmus sofort greift (Vergangenheit bleibt erhalten). */
 function rotaApplied(){
@@ -695,7 +699,12 @@ function viewHeute(){
   preview=`<div class="rotaprev">${days.join("")}</div><p class="muted sm" style="margin:8px 0 0">F Früh · S Spät · N Nacht · – Frei. ${fromRota?"Automatisch aus deinem Schichtrhythmus — Tipp auf eine Schicht überschreibt nur heute.":"Heute manuell gewählt — erneut antippen, dann gilt wieder der Rhythmus."}</p>`;
  }else if(!ts)preview=`<p class="muted sm" style="margin:10px 0 0">Tipp: Unter „Mehr" → „Schichtplan" hinterlegst du deinen Schicht-Rhythmus einmal — dann wählt Hermes die Schicht jeden Tag automatisch.</p>`;
  let hero;
- if(ts){const s=SHIFTS[ts];hero=`<section class="card hero"><div class="hero-tag">${s.label}schicht</div><div class="hero-when">${s.when}</div><p class="hero-note">${s.note}</p>${s.train?`<button class="btn" data-go="training">${esc(nd.label)} starten</button>`:`<div class="hero-rest">Heute leicht halten.</div>`}</section>`;}
+ if(ts){const s=SHIFTS[ts];
+  const restNight=isRestAfterNight(todayKey());
+  const when=restNight?"Erholung geht heute vor.":s.when;
+  const note=restNight?"Erster freier Tag nach dem Nacht-Block — der gehört dem Schlaf.":s.note;
+  const body=restNight?`<div class="hero-rest">Heute kein Training. Schlaf nach, iss gut und tank auf — morgen greifst du wieder voll an.</div>`:(s.train?`<button class="btn" data-go="training">${esc(nd.label)} starten</button>`:`<div class="hero-rest">Heute leicht halten.</div>`);
+  hero=`<section class="card hero"><div class="hero-tag">${s.label}schicht</div><div class="hero-when">${when}</div><p class="hero-note">${note}</p>${body}</section>`;}
  else hero=`<section class="card hero hero--empty">Wähl oben deine Schicht — dann zeigt dir Hermes, wann und wie der Tag am besten läuft.</section>`;
  const nutcard=tg?`<section class="card"><div class="between" style="margin-bottom:12px"><div class="eyebrow" style="margin:0">Heute gegessen</div><button class="btn-ghost btn btn-sm" style="width:auto;padding:7px 12px" data-go="essen">Öffnen</button></div>${bar("Kalorien",con.kcal,tg.kcal,"kcal",true)}${bar("Protein",con.p,tg.p,"g")}</section>`
    :`<section class="card"><div class="eyebrow">Ernährung</div><p class="muted">Gib dein Profil (unter „Mehr") und dein Gewicht ein, dann berechnet Hermes deinen Tagesbedarf.</p></section>`;
