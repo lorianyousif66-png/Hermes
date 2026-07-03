@@ -66,18 +66,28 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 ## Tabs / Views
 
-- `heute` — Schicht wählen → Empfehlung; Mini-Stats; Mini-Ernährungsübersicht.
+- `heute` — Schicht wählen → Empfehlung; Mini-Stats (inkl. Essens-Serie `foodStreak()`);
+  Mini-Ernährungsübersicht. 1. freier Tag nach Nachtschicht (`isRestAfterNight`,
+  `prevShift`) → Schlaf-Empfehlung statt Trainings-Button.
 - `training` — Unternavigation (`state.trainView`: `log` | `plan` | `hist`, via `trainNav()`):
   - **Einheit** (`log`): Session-Logging (Sätze: Gewicht/Wdh./erledigt), Tag-Wechsel,
     Pausen-Timer, Notizfeld, Übungs-Anleitungen (`<details>`).
   - **Plan** (`plan`): **Plan-Assistent** (`wizEditor`, generiert Plan nach Ziel + Tagen)
     + **Plan bearbeiten** (`planEditor`, inkl. Übungs-Bibliothek `viewLibrary`).
   - **Verlauf** (`hist`): Trainings-Historie (`histEditor`).
-- `essen` — Ernährungs-Tracker: Tagesbedarf vs. Konsum (Makros + Mikros + Wasser),
-  Essen aus Datenbank hinzufügen (`viewFoodPicker`, inkl. Portions-Chips **und
-  Barcode-Scan**), eigene Lebensmittel, 7-Tage-Wochenverlauf (`weekCard`) und
-  14-Tage-Makro-Verlaufskurve (`trendCard`, umschaltbar kcal/Protein/KH/Fett).
-- `gewicht` — Gewicht eintragen, Verlaufskurve (selbstgezeichnetes SVG), Einträge löschen.
+- `essen` — Ernährungs-Tracker: Tagesbedarf vs. Konsum (Makros + Mikros + Wasser).
+  Einträge sind in **Mahlzeiten** gruppiert (`MEALS`: Frühstück/Mittag/Abend/Snacks,
+  Feld `meal` am Food-Log-Eintrag; alte Einträge ohne `meal` → Snacks). Je Mahlzeit
+  „+ Hinzufügen" (öffnet `viewFoodPicker` mit Vorauswahl `state.mealFor`) und
+  „↺ Wie gestern" (`data-copymeal`, kopiert die gestrige Mahlzeit). Beim Hinzufügen
+  Belohnungs-Animation (`showReward`, `QUOTES`, Overlay `#reward` statisch im Body).
+  Tipp auf Zutat im Picker → Nährwert-/Gesundheits-Info (`openFoodInfo`, `foodHealth`).
+  Fehlt das Gewicht, bietet der Platzhalter die Gewichtseingabe direkt an.
+  Außerdem: Barcode-Scan, Portions-Chips, eigene Lebensmittel, 7-Tage-Wochenverlauf
+  (`weekCard`), Makro-Verlaufskurve (`trendCard`, Metrik `state.trendMetric` und
+  Zeitraum `state.trendDays` 14/30/90 umschaltbar).
+- `gewicht` — Gewicht eintragen, Verlaufskurve (selbstgezeichnetes SVG, inkl.
+  Ø kg/Woche ab 7 Tagen Spannweite), Einträge löschen.
 - `mehr` — **nur Einstellungen** als Akkordeon: Darstellung (Theme), Profil & Ziel
   (`profileEditor`, inkl. Ernährungsziel), Feineinstellungen Protein/Pause (`goalsEditor`),
   Daten sichern (Datei-Download/-Upload + Copy-Export/Import/Reset). Trainingsplan &
@@ -155,8 +165,18 @@ hermes:rota      Schichtrhythmus { start: "YYYY-MM-DD", seq: [shiftKey, …] }
   BMR (Mifflin-St Jeor) × Aktivität, ± Ziel; Protein aus `settings.protein` g/kg,
   Fett 0,8 g/kg, Rest Kohlenhydrate; Mikro-Richtwerte nach Geschlecht (DGE, ca.).
 - `weekStats()` / `weekCard()` — 7-Tage-Verlauf (kcal-Balken + Ø kcal/Protein) im Essen-Tab.
-- `dayTotals()` / `trendCard()` / `trendChart()` — 14-Tage-Makro-Verlaufskurve (SVG-Linie
-  mit Zielmarke), umschaltbar über `state.trendMetric` (kcal/p/c/f).
+- `dayTotals()` / `trendCard()` / `trendChart()` — Makro-Verlaufskurve (SVG-Linie mit
+  Zielmarke), umschaltbar über `state.trendMetric` (kcal/p/c/f) und `state.trendDays`
+  (14/30/90 Tage).
+- `MEALS` / `showReward()` / `QUOTES` — Mahlzeiten-Gruppen im Essen-Tab + Belohnungs-
+  Animation (Haken + wechselnder Spruch, Overlay `#reward` statisch im Body, imperativ).
+- `openFoodInfo(idx)` / `foodHealth(f)` — Zutaten-Info (Bottom-Sheet `#exmodal`):
+  Nährwerte pro 100 g + automatisch erzeugte „Warum gut für dich"-Begründungen
+  (Schwellwerte je Nährstoff, skaliert auf alle inkl. eigener Lebensmittel).
+- `prevShift(date)` / `isRestAfterNight(date)` — „1. Tag nach Nacht = Schlaf" im Heute-Tab.
+- `foodStreak()` — Serie aufeinanderfolgender Tage mit Essens-Einträgen (Heute-Kachel).
+- `buzz(pattern)` — kurze Bestätigungs-Vibration (Android; sonst No-Op): Satz-Haken,
+  Belohnung, Wasser, Einheit speichern.
 - `PLAN_TEMPLATES` / `generatePlan(focus, days)` — Plan-Assistent unter „Mehr". `focus`:
   `"aufbau"` (Muskelaufbau) | `"fettabbau"` (+ Cardio-Finisher) | `"beides"`; `days` 2–4.
   Steuert Wdh.-Bereich, Sätze und Cardio. UI-Zustand liegt in `state.wiz`.
@@ -177,14 +197,16 @@ hermes:rota      Schichtrhythmus { start: "YYYY-MM-DD", seq: [shiftKey, …] }
 
 ## Backlog / mögliche nächste Schritte (nur auf Wunsch)
 
-Erledigt: Portionsvorlagen · größere Lebensmittel-DB · Wochen-Verlauf Kalorien/Makros ·
-PWA offline (manifest.json + Service Worker) · Datei-Export/-Import · Plan-Assistent
-(Muskelaufbau/Fettabbau/Beides + Tage 2–4) · Barcode-Scan (Open Food Facts) ·
-14-Tage-Makro-Verlaufskurve · Ziel „Body Recomp".
+Erledigt: Portionsvorlagen · größere Lebensmittel-DB (~90 Einträge) · Wochen-Verlauf
+Kalorien/Makros · PWA offline (manifest.json + Service Worker) · Datei-Export/-Import ·
+Plan-Assistent (Muskelaufbau/Fettabbau/Beides + Tage 2–4) · Barcode-Scan (Open Food
+Facts) · Makro-Verlaufskurve 14/30/90 Tage wählbar · Ziel „Body Recomp" ·
+Mahlzeiten-Kategorien + Belohnungs-Animation · Zutaten-Info (Nährwerte + „Warum
+gesund") · „Wie gestern"-Kopie je Mahlzeit · Essens-Serie · Schlaf-Empfehlung nach
+Nachtblock · Ø kg/Woche · Tipp-Feedback + Vibration.
 
 Offen:
 - Noch mehr eingebaute Lebensmittel-Einträge.
-- Verlaufsansicht über längere Zeiträume (30/90 Tage) wählbar machen.
 - Geräte-Sync (aktuell nur lokal) — bewusst später, eigener Schritt.
 
 ## Deploy

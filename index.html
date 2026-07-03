@@ -257,6 +257,10 @@ details.steps li{font-size:13px;line-height:1.5;color:var(--text);margin-bottom:
 .scan-input:focus{outline:none;border-color:#888;}
 .scan-btn{background:#F2F0EB;color:#0A0A0A;border:none;border-radius:9px;padding:12px 16px;font-weight:700;font-size:14px;cursor:pointer;}
 .scan-btn.ghost{background:transparent;color:#fff;border:1px solid #444;width:100%;}
+/* Tipp-Feedback: alle Buttons federn beim Drücken kurz ein (fühlt sich direkter an). */
+.btn,.chip,.daybtn,.setbtn,.addbtn,.pick-add,.portchip,.iconbtn,.water-btns button,.restbtn,.scan-btn,.rotachip,.del{transition:transform .08s ease,opacity .12s ease,background .12s ease,border-color .12s ease;}
+.btn:active,.chip:active,.daybtn:active,.setbtn:active,.addbtn:active,.pick-add:active,.portchip:active,.iconbtn:active,.water-btns button:active,.restbtn:active,.scan-btn:active,.rotachip:active{transform:scale(.95);}
+.btn:disabled{opacity:.45;}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;}}
 </style>
 </head>
@@ -283,6 +287,8 @@ details.steps li{font-size:13px;line-height:1.5;color:var(--text);margin-bottom:
 <script>
 "use strict";
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+/* Kurze Vibration als Bestätigung (Android; anderswo stiller No-Op). */
+function buzz(p){try{if(navigator.vibrate)navigator.vibrate(p||12);}catch(e){}}
 
 /* ---------- Übungs-Bibliothek ---------- */
 const EXLIB={
@@ -472,6 +478,39 @@ const FOODS=[
 ["Dattel (getrocknet)",282,2.5,75,0.4,8,0.4,0,39,1,43,656],
 ["Honig",304,0.3,82,0,0.2,0.5,0,6,0.4,2,52],
 ["Butter",717,0.9,0.1,81,0,0,1.5,24,0,2,24],
+["Brötchen (Weizen)",265,8.5,52,2.5,3,0,0,25,1.2,25,120],
+["Dinkelbrot",240,9,46,2.5,6,0,0,30,2.5,60,220],
+["Müsli (ungezuckert)",355,10,58,7,9,0,0,50,4,120,350],
+["Naturjoghurt (3,5%)",62,3.9,4.7,3.5,0,0,0,120,0.1,12,155],
+["Kefir",55,3.4,4.1,3,0,0,0,120,0.1,12,150],
+["Hafermilch",45,1,7,1.5,0.8,0,0,120,0.3,10,100],
+["Feta",264,14,4,21,0,0,0.4,493,0.7,19,62],
+["Frischkäse",253,6,3,24,0,0,0,98,0.1,9,138],
+["Emmentaler",380,29,0.4,29,0,0,1.1,1030,0.3,33,82],
+["Schinken (gekocht)",110,20,1,3,0,0,0,8,1,20,340],
+["Salami",336,19,1,28,0,0,0.8,10,1.5,17,316],
+["Proteinriegel",380,30,35,12,5,0,0,150,2,80,250],
+["Dunkle Schokolade (85%)",590,10,22,53,11,0,0,73,12,230,715],
+["Nuss-Nougat-Creme",539,6,57,31,3,0,0,108,4.4,64,407],
+["Marmelade",250,0.3,60,0.1,1,2,0,10,0.3,4,60],
+["Ketchup",100,1.2,23,0.2,0.3,4,0,15,0.4,15,340],
+["Pommes frites",312,3.4,41,15,3.8,10,0,12,0.7,35,580],
+["Pizza Salami",260,11,28,11,2,1,0.2,150,1.2,20,180],
+["Döner Kebab",215,12,16,11,1.5,5,0.1,60,1.5,25,250],
+["Currywurst mit Soße",290,10,10,23,1,3,0.3,20,1,15,200],
+["Schnitzel (paniert)",260,19,15,14,1,0,0.2,30,1.2,25,300],
+["Bratwurst",297,14,1,27,0,0,0.5,20,1.1,15,250],
+["Champignons",22,3.1,3.3,0.3,1,2.1,0.2,3,0.5,9,318],
+["Blumenkohl",25,1.9,5,0.3,2,48,0,22,0.4,15,299],
+["Zwiebel",40,1.1,9.3,0.1,1.7,7.4,0,23,0.2,10,146],
+["Eisbergsalat",14,0.9,3,0.1,1.2,2.8,0,18,0.4,7,141],
+["Birne",57,0.4,15,0.1,3.1,4.3,0,9,0.2,7,116],
+["Trauben",69,0.7,18,0.2,0.9,3.2,0,10,0.4,7,191],
+["Wassermelone",30,0.6,8,0.2,0.4,8.1,0,7,0.2,10,112],
+["Himbeeren",52,1.2,12,0.7,6.5,26,0,25,0.7,22,151],
+["Ananas",50,0.5,13,0.1,1.4,48,0,13,0.3,12,109],
+["Cola",42,0,10.6,0,0,0,0,2,0,0,2],
+["Apfelsaft",46,0.1,11,0.1,0.2,1,0,7,0.1,5,101],
 ];
 const FKEYS=["kcal","p","c","f","fib","vc","vd","ca","fe","mg","k"];
 function foodObj(a){const n={};FKEYS.forEach((k,i)=>n[k]=a[i+1]);return {name:a[0],n};}
@@ -501,6 +540,26 @@ const PORTIONS={
  "Olivenöl":[["1 EL",10]],
  "Butter":[["1 TL",5]],
  "Dattel (getrocknet)":[["1 Stück",8]],
+ "Brötchen (Weizen)":[["1 Stück",60]],
+ "Naturjoghurt (3,5%)":[["1 Becher",150]],
+ "Kefir":[["1 Glas",250]],
+ "Hafermilch":[["1 Glas",200]],
+ "Schinken (gekocht)":[["1 Scheibe",20]],
+ "Salami":[["1 Scheibe",10]],
+ "Proteinriegel":[["1 Riegel",60]],
+ "Dunkle Schokolade (85%)":[["2 Stücke",10]],
+ "Nuss-Nougat-Creme":[["1 EL",20]],
+ "Marmelade":[["1 TL",10]],
+ "Ketchup":[["1 EL",15]],
+ "Pommes frites":[["1 Portion",150]],
+ "Pizza Salami":[["1 Pizza",350]],
+ "Döner Kebab":[["1 Döner",350]],
+ "Currywurst mit Soße":[["1 Portion",200]],
+ "Schnitzel (paniert)":[["1 Schnitzel",180]],
+ "Bratwurst":[["1 Stück",100]],
+ "Birne":[["1 Stück",160]],
+ "Cola":[["1 Glas",250],["1 Dose",330]],
+ "Apfelsaft":[["1 Glas",250]],
 };
 
 const NUT=[
@@ -611,7 +670,7 @@ const state={
  foodLog:load(K.food,{}),waterLog:load(K.water,{}),customFoods:load(K.custom,[]),
  trainDayId:null,log:null,saved:false,note:"",acc:{},rest:{active:false,left:0,timer:null},
  libFor:null,foodPicker:false,wiz:{focus:"aufbau",days:2},trendMetric:"kcal",scanAdded:null,trainView:"log",
- mealFor:"fruehstueck",lastQuote:-1,
+ mealFor:"fruehstueck",lastQuote:-1,trendDays:14,
 };
 if(!state.plan.length)state.plan=defaultPlan();
 if(!state.plan.find(d=>d.id===state.nextDayId))state.nextDayId=state.plan[0].id;
@@ -647,6 +706,14 @@ function consumedToday(){
  day.forEach(e=>FKEYS.forEach(k=>sum[k]+=e.n[k]||0));
  sum.water=state.waterLog[todayKey()]||0;
  return sum;
+}
+/* Serie: aufeinanderfolgende Tage mit Essens-Einträgen (heute zählt, sobald etwas
+   drin ist; sonst ab gestern rückwärts — die Serie reißt nicht schon morgens). */
+function foodStreak(){
+ let n=0;const d=new Date();
+ if(!(state.foodLog[dateKey(d)]||[]).length)d.setDate(d.getDate()-1);
+ while((state.foodLog[dateKey(d)]||[]).length){n++;d.setDate(d.getDate()-1);}
+ return n;
 }
 
 /* ---------- Render ---------- */
@@ -711,9 +778,10 @@ function viewHeute(){
  return `<div class="stack">
   <section class="card"><div class="eyebrow">Welche Schicht heute</div><div class="shiftrow">${chips}</div>${preview}</section>
   ${hero}
-  <div class="grid2">
-   <section class="card stat"><div class="stat-num">${sess}</div><div class="stat-lbl">Einheiten /<br>7 Tage</div></section>
-   <section class="card stat"><div class="stat-num">${kg??"—"}${kg?'<span class="u">kg</span>':''}</div><div class="stat-lbl">aktuelles<br>Gewicht</div></section>
+  <div class="grid2" style="grid-template-columns:repeat(3,1fr)">
+   <section class="card stat"><div class="stat-num" style="font-size:26px">${sess}</div><div class="stat-lbl">Einheiten /<br>7 Tage</div></section>
+   <section class="card stat"><div class="stat-num" style="font-size:26px">${kg??"—"}${kg?'<span class="u">kg</span>':''}</div><div class="stat-lbl">aktuelles<br>Gewicht</div></section>
+   <section class="card stat"><div class="stat-num" style="font-size:26px">${foodStreak()}</div><div class="stat-lbl">Tage Essen<br>getrackt</div></section>
   </div>
   ${nutcard}
  </div>`;
@@ -837,7 +905,7 @@ function finish(){
  state.lastBest=nb;save(K.last,nb);
  checkPRs();
  const order=state.plan.map(x=>x.id),i=order.indexOf(state.trainDayId);state.nextDayId=order[(i+1)%order.length];save(K.nextDay,state.nextDayId);
- state.note="";state.saved=true;stopRest();render();
+ state.note="";state.saved=true;stopRest();buzz([20,60,20]);render();
 }
 function switchDay(id){state.trainDayId=id;state.log=buildLog(id);state.saved=false;render();}
 
@@ -857,6 +925,7 @@ function showReward(){
  let i;do{i=Math.floor(Math.random()*QUOTES.length);}while(QUOTES.length>1&&i===state.lastQuote);
  state.lastQuote=i;
  document.getElementById("rewardQuote").textContent=QUOTES[i];
+ buzz(18);
  el.classList.remove("on","out");void el.offsetWidth; // Reflow: Animation neu starten
  el.classList.add("on");
  clearTimeout(rewardTimer);
@@ -869,11 +938,15 @@ function viewEssen(){
  if(!tg)return `<div class="stack"><section class="card"><div class="eyebrow">Ernährung</div><p class="muted">Für deinen Tagesbedarf fehlt nur noch dein <b>aktuelles Gewicht</b> — damit rechnet Hermes Kalorien und Nährstoffe aus.</p><div class="weighrow" style="margin-top:14px"><input class="inp inp--big" id="kgInput" type="number" inputmode="decimal" placeholder="z. B. 80"><span class="kglabel">kg</span><button class="addbtn" data-addkg="1">Setzen</button></div><p class="muted sm" style="margin-top:12px">Dein Profil (Alter, Größe, Geschlecht, Aktivität, Ziel) ist mit Standardwerten schon gesetzt — anpassen kannst du es unter „Mehr" → „Profil &amp; Ziel". <button class="btn btn-ghost btn-sm" data-go="mehr" style="width:auto;padding:6px 12px;margin-top:8px">Profil anpassen</button></p></section></div>`;
  const con=consumedToday();
  const day=state.foodLog[todayKey()]||[];
+ const yd=new Date();yd.setDate(yd.getDate()-1);const ylog=state.foodLog[dateKey(yd)]||[];
  const mealCards=MEALS.map(([mk,ml])=>{
   const entries=day.map((e,i)=>({e,i})).filter(x=>(x.e.meal||"snack")===mk);
   const sub=entries.reduce((a,x)=>a+(x.e.n.kcal||0),0);
   const rows=entries.length?entries.map(({e,i})=>`<div class="foodentry"><div><div class="fn">${esc(e.name)}</div><div class="fd">${e.grams} g · ${Math.round(e.n.kcal)} kcal · ${Math.round(e.n.p)}g P</div></div><button class="del" data-delfood="${i}">✕</button></div>`).join(""):`<p class="muted sm">Noch nichts.</p>`;
-  return `<section class="card"><div class="between" style="margin-bottom:8px"><div class="eyebrow" style="margin:0">${ml}</div>${entries.length?`<span class="muted sm">${Math.round(sub)} kcal</span>`:""}</div>${rows}<button class="btn btn-ghost btn-sm" data-mealadd="${mk}" style="margin-top:10px">+ Hinzufügen</button></section>`;
+  const yEntries=ylog.filter(e=>(e.meal||"snack")===mk);
+  const yKcal=Math.round(yEntries.reduce((a,e)=>a+(e.n.kcal||0),0));
+  const copyBtn=(!entries.length&&yEntries.length)?`<button class="btn btn-ghost btn-sm" data-copymeal="${mk}" style="flex:1">↺ Wie gestern (${yKcal} kcal)</button>`:"";
+  return `<section class="card"><div class="between" style="margin-bottom:8px"><div class="eyebrow" style="margin:0">${ml}</div>${entries.length?`<span class="muted sm">${Math.round(sub)} kcal</span>`:""}</div>${rows}<div class="minirow" style="gap:8px;margin-top:10px"><button class="btn btn-ghost btn-sm" data-mealadd="${mk}" style="flex:1">+ Hinzufügen</button>${copyBtn}</div></section>`;
  }).join("");
  const macros=NUT.filter(n=>n.kind==="cap"||n.kind==="macro").map(n=>bar(n.l,con[n.k]||0,tg[n.k],n.u,n.kind==="cap")).join("");
  const micros=NUT.filter(n=>n.kind==="micro").map(n=>bar(n.l,con[n.k]||0,tg[n.k],n.u)).join("");
@@ -916,14 +989,16 @@ function weekCard(tg){
 }
 function dayTotals(key){const log=state.foodLog[key]||[];const o={kcal:0,p:0,c:0,f:0};log.forEach(e=>{o.kcal+=e.n.kcal||0;o.p+=e.n.p||0;o.c+=e.n.c||0;o.f+=e.n.f||0;});return o;}
 function trendCard(tg){
- const N=14,days=[];
+ const N=[14,30,90].includes(state.trendDays)?state.trendDays:14,days=[];
  for(let i=N-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const key=dateKey(d);days.push({key,...dayTotals(key)});}
- if(days.filter(d=>d.kcal>0).length<2)return `<section class="card"><div class="eyebrow">Verlauf · 14 Tage</div><p class="muted sm">Sobald du an mindestens zwei Tagen Essen einträgst, erscheint hier die Verlaufskurve für Kalorien und Makros.</p></section>`;
+ const dayChips=[14,30,90].map(n=>`<button class="chip${N===n?' chip--on':''}" data-trenddays="${n}" style="padding:9px 2px">${n} Tage</button>`).join("");
+ if(days.filter(d=>d.kcal>0).length<2)return `<section class="card"><div class="eyebrow">Verlauf · ${N} Tage</div><p class="muted sm">Sobald du an mindestens zwei Tagen Essen einträgst, erscheint hier die Verlaufskurve für Kalorien und Makros.</p></section>`;
  const metrics={kcal:["Kalorien","kcal",tg.kcal],p:["Protein","g",tg.p],c:["Kohlenh.","g",tg.c],f:["Fett","g",tg.f]};
  const m=metrics[state.trendMetric]?state.trendMetric:"kcal",[ml,mu,mt]=metrics[m];
  const chips=Object.entries(metrics).map(([k,v])=>`<button class="chip${m===k?' chip--on':''}" data-trend="${k}" style="padding:9px 2px">${v[0]}</button>`).join("");
  const chart=trendChart(days.map(d=>({date:d.key,v:d[m],has:d.kcal>0})),mt);
- return `<section class="card"><div class="eyebrow">Verlauf · 14 Tage</div>
+ return `<section class="card"><div class="eyebrow">Verlauf · ${N} Tage</div>
+  <div class="shiftrow" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px">${dayChips}</div>
   <div class="shiftrow" style="margin-bottom:12px">${chips}</div>
   ${chart}
   <p class="muted sm" style="margin-top:8px">Tageswerte für ${ml}. Gestrichelt = Ziel (${Math.round(mt)} ${mu}). Punkte = Tage mit Einträgen.</p></section>`;
@@ -935,7 +1010,8 @@ function trendChart(pts,target){
  let min=Math.min(...vals),max=Math.max(...vals);if(min===max){min-=1;max+=1;}else{const mm=(max-min)*0.15;min-=mm;max+=mm;}min=Math.max(0,min);
  const px=i=>pad.l+(N===1?xs/2:(i/(N-1))*xs),py=v=>pad.t+ys-((v-min)/((max-min)||1))*ys;
  const line=data.map(p=>`${px(p.i).toFixed(1)},${py(p.v).toFixed(1)}`).join(" ");
- const dots=data.map(p=>`<circle cx="${px(p.i).toFixed(1)}" cy="${py(p.v).toFixed(1)}" r="2.3" fill="var(--text)"/>`).join("");
+ const dr=N>40?1.4:2.3;
+ const dots=data.map(p=>`<circle cx="${px(p.i).toFixed(1)}" cy="${py(p.v).toFixed(1)}" r="${dr}" fill="var(--text)"/>`).join("");
  const ty=py(target),tline=`<line x1="${pad.l}" y1="${ty.toFixed(1)}" x2="${W-pad.r}" y2="${ty.toFixed(1)}" stroke="var(--muted)" stroke-dasharray="4 3"/>`;
  const yl=[max,min].map(v=>{const y=py(v);return `<text class="axis" x="2" y="${(y+3).toFixed(1)}">${Math.round(v)}</text>`;}).join("");
  const xl=`<text class="axis" x="${px(0).toFixed(1)}" y="${H-6}">${fmtDate(pts[0].date)}</text><text class="axis" x="${px(N-1).toFixed(1)}" y="${H-6}" text-anchor="end">${fmtDate(pts[N-1].date)}</text>`;
@@ -1072,7 +1148,9 @@ function svgChart(bw){
  const yl=[max,(max+min)/2,min].map(v=>{const y=py(v);return `<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="var(--hair)"/><text class="axis" x="2" y="${y+3}">${v.toFixed(0)}</text>`;}).join("");
  const xl=`<text class="axis" x="${px(0)}" y="${H-6}">${fmtDate(bw[0].date)}</text><text class="axis" x="${px(n-1)}" y="${H-6}" text-anchor="end">${fmtDate(bw[n-1].date)}</text>`;
  const diff=+(bw[n-1].kg-bw[0].kg).toFixed(1);
- return `<section class="card"><div class="eyebrow">Verlauf</div><svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block">${yl}<polyline points="${pts}" fill="none" stroke="var(--text)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${dots}${xl}</svg><div class="trend">${diff>0?'+':''}${diff} kg seit Beginn</div></section>`;
+ const span=(new Date(bw[n-1].date)-new Date(bw[0].date))/86400000;
+ const wk=span>=7?` · Ø ${(diff/span*7>0?'+':'')}${(diff/span*7).toFixed(1)} kg/Woche`:"";
+ return `<section class="card"><div class="eyebrow">Verlauf</div><svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block">${yl}<polyline points="${pts}" fill="none" stroke="var(--text)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${dots}${xl}</svg><div class="trend">${diff>0?'+':''}${diff} kg seit Beginn${wk}</div></section>`;
 }
 function addWeight(){const inp=document.getElementById("kgInput");if(!inp)return;const kg=parseFloat(String(inp.value).replace(",","."));if(!kg||kg<=0)return;const date=todayKey();state.bodyweight=[...state.bodyweight.filter(b=>b.date!==date),{date,kg}].sort((a,b)=>a.date.localeCompare(b.date));save(K.weight,state.bodyweight);render();}
 
@@ -1172,7 +1250,7 @@ function wire(){
  main.querySelectorAll("[data-trainview]").forEach(b=>b.onclick=()=>{state.trainView=b.dataset.trainview;state.libFor=null;render();});
  main.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>switchDay(b.dataset.day));
  main.querySelectorAll('input[data-f]').forEach(inp=>inp.oninput=()=>{state.log[+inp.dataset.ei].sets[+inp.dataset.si][inp.dataset.f]=inp.value;});
- main.querySelectorAll("[data-check]").forEach(btn=>btn.onclick=()=>{const [ei,si]=btn.dataset.check.split("-").map(Number);const s=state.log[ei].sets[si];s.done=!s.done;btn.classList.toggle("check--on",s.done);const r=main.querySelector(`[data-row="${ei}-${si}"]`);if(r)r.classList.toggle("setrow--done",s.done);updateProgress();if(s.done&&state.settings.rest>0)startRest();});
+ main.querySelectorAll("[data-check]").forEach(btn=>btn.onclick=()=>{const [ei,si]=btn.dataset.check.split("-").map(Number);const s=state.log[ei].sets[si];s.done=!s.done;if(s.done)buzz(10);btn.classList.toggle("check--on",s.done);const r=main.querySelector(`[data-row="${ei}-${si}"]`);if(r)r.classList.toggle("setrow--done",s.done);updateProgress();if(s.done&&state.settings.rest>0)startRest();});
  main.querySelectorAll("[data-startrest]").forEach(b=>b.onclick=startRest);
  main.querySelectorAll("[data-addset]").forEach(b=>b.onclick=()=>{state.log[+b.dataset.addset].sets.push({weight:"",reps:"",done:false});render();});
  main.querySelectorAll("[data-delset]").forEach(b=>b.onclick=()=>{const ex=state.log[+b.dataset.delset];if(ex.sets.length>1){ex.sets.pop();render();}});
@@ -1185,9 +1263,11 @@ function wire(){
  main.querySelectorAll("[data-mealsel]").forEach(b=>b.onclick=()=>{state.mealFor=b.dataset.mealsel;render();});
  const fb=main.querySelector("[data-foodback]");if(fb)fb.onclick=()=>{state.foodPicker=false;state.scanAdded=null;render();};
  main.querySelectorAll("[data-trend]").forEach(b=>b.onclick=()=>{state.trendMetric=b.dataset.trend;render();});
+ main.querySelectorAll("[data-trenddays]").forEach(b=>b.onclick=()=>{state.trendDays=+b.dataset.trenddays;render();});
+ main.querySelectorAll("[data-copymeal]").forEach(b=>b.onclick=()=>{const mk=b.dataset.copymeal;const yd=new Date();yd.setDate(yd.getDate()-1);const src=(state.foodLog[dateKey(yd)]||[]).filter(e=>(e.meal||"snack")===mk);if(!src.length)return;const day=todayKey();const arr=[...(state.foodLog[day]||[]),...src.map(e=>({...e,meal:mk,n:{...e.n}}))];state.foodLog={...state.foodLog,[day]:arr};save(K.food,state.foodLog);render();showReward();});
  const sc=main.querySelector("[data-scanopen]");if(sc)sc.onclick=openScanner;
  main.querySelectorAll("[data-delfood]").forEach(b=>b.onclick=()=>{const i=+b.dataset.delfood;const day=todayKey();const arr=[...(state.foodLog[day]||[])];arr.splice(i,1);state.foodLog={...state.foodLog,[day]:arr};save(K.food,state.foodLog);render();});
- main.querySelectorAll("[data-water]").forEach(b=>b.onclick=()=>{const day=todayKey();const cur=state.waterLog[day]||0;state.waterLog={...state.waterLog,[day]:Math.max(0,cur+ +b.dataset.water)};save(K.water,state.waterLog);render();});
+ main.querySelectorAll("[data-water]").forEach(b=>b.onclick=()=>{const day=todayKey();const cur=state.waterLog[day]||0;state.waterLog={...state.waterLog,[day]:Math.max(0,cur+ +b.dataset.water)};save(K.water,state.waterLog);buzz(8);render();});
  main.querySelectorAll("[data-addfood]").forEach(b=>b.onclick=()=>{const i=+b.dataset.addfood;const gi=main.querySelector(`[data-gram="${i}"]`);addFood(i,gi?parseFloat(gi.value):100,state.mealFor);showReward();});
  main.querySelectorAll("[data-portadd]").forEach(b=>b.onclick=()=>{const[i,g]=b.dataset.portadd.split("|");addFood(+i,+g,state.mealFor);showReward();});
  main.querySelectorAll("[data-foodinfo]").forEach(el=>el.onclick=()=>openFoodInfo(+el.dataset.foodinfo));
