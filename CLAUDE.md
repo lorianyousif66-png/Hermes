@@ -66,9 +66,13 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 ## Tabs / Views
 
-- `heute` — Schicht wählen → Empfehlung; Mini-Stats (inkl. Essens-Serie `foodStreak()`);
-  Mini-Ernährungsübersicht. 1. freier Tag nach Nachtschicht (`isRestAfterNight`,
-  `prevShift`) → Schlaf-Empfehlung statt Trainings-Button.
+- `heute` — **oben Übersicht** (`ovrCard`): Kalorien-Ring + „Gegessen"/„Verbraucht"
+  daneben, Buttons „+ Aktivität" / „Essen". Darunter Trainings-Empfehlung, Mini-Stats
+  (inkl. Essens-Serie `foodStreak()`), unten die Schicht-Auswahl. 1. freier Tag nach
+  Nachtschicht (`isRestAfterNight`, `prevShift`) → Schlaf-Empfehlung statt Trainings-Button.
+  „+ Aktivität" öffnet den Aktivitäten-Picker (`viewActivityPicker`, `state.actAdding`):
+  Aktivität + Dauer → geschätzter Kalorienverbrauch (`ACTS` MET-Werte, `actKcal`),
+  Tagesverbrauch via `burnedToday()`.
 - `training` — Unternavigation (`state.trainView`: `log` | `plan` | `hist`, via `trainNav()`):
   - **Einheit** (`log`): Session-Logging (Sätze: Gewicht/Wdh./erledigt), Tag-Wechsel,
     Pausen-Timer, Notizfeld, Übungs-Anleitungen (`<details>`).
@@ -106,6 +110,7 @@ hermes:next      ID des nächsten Trainingstags (Rotation)
 hermes:shifts    { "YYYY-MM-DD": shiftKey }
 hermes:food      { "YYYY-MM-DD": [foodEntries] }
 hermes:water     { "YYYY-MM-DD": ml }
+hermes:acts      { "YYYY-MM-DD": [{name, min, kcal}] }  Aktivitäten/Kalorienverbrauch
 hermes:custom    eigene Lebensmittel
 hermes:pr        persönliche Rekorde { übungsname: {score, weight, reps, unit, date} }
 hermes:rota      Schichtrhythmus { start: "YYYY-MM-DD", seq: [shiftKey, …] }
@@ -175,6 +180,9 @@ hermes:rota      Schichtrhythmus { start: "YYYY-MM-DD", seq: [shiftKey, …] }
   (Schwellwerte je Nährstoff, skaliert auf alle inkl. eigener Lebensmittel).
 - `prevShift(date)` / `isRestAfterNight(date)` — „1. Tag nach Nacht = Schlaf" im Heute-Tab.
 - `foodStreak()` — Serie aufeinanderfolgender Tage mit Essens-Einträgen (Heute-Kachel).
+- `ACTS` / `actKcal(met,min,kg)` / `burnedToday()` / `viewActivityPicker()` — Aktivitäten
+  im Heute-Tab: `ACTS` = `[Name, MET]`, Verbrauch = MET × kg × h (Gewicht `latestKg()||75`).
+  Einträge in `hermes:acts`; Anzeige „Verbraucht" in der Übersicht (`ovrCard`).
 - `buzz(pattern)` — kurze Bestätigungs-Vibration (Android; sonst No-Op): Satz-Haken,
   Belohnung, Wasser, Einheit speichern.
 - `PLAN_TEMPLATES` / `generatePlan(focus, days)` — Plan-Assistent unter „Mehr". `focus`:
@@ -203,7 +211,8 @@ Plan-Assistent (Muskelaufbau/Fettabbau/Beides + Tage 2–4) · Barcode-Scan (Ope
 Facts) · Makro-Verlaufskurve 14/30/90 Tage wählbar · Ziel „Body Recomp" ·
 Mahlzeiten-Kategorien + Belohnungs-Animation · Zutaten-Info (Nährwerte + „Warum
 gesund") · „Wie gestern"-Kopie je Mahlzeit · Essens-Serie · Schlaf-Empfehlung nach
-Nachtblock · Ø kg/Woche · Tipp-Feedback + Vibration.
+Nachtblock · Ø kg/Woche · Tipp-Feedback + Vibration · Heute-Übersicht mit Kalorien-Ring ·
+Aktivitäten-Tracking (Kalorienverbrauch, MET-basiert).
 
 Offen:
 - Noch mehr eingebaute Lebensmittel-Einträge.
