@@ -193,6 +193,13 @@ details.steps li{font-size:13px;line-height:1.5;color:var(--text);margin-bottom:
 .rt-num{font-weight:800;font-size:30px;line-height:1;}
 .rt-sub{font-size:12px;color:var(--muted);margin-top:2px;}
 .rt-left{font-size:11px;color:var(--muted);margin-top:4px;font-weight:600;}
+.ovr{display:flex;align-items:center;gap:14px;}
+.ovr-ring{flex:none;width:126px;}
+.ovr-ring .ringwrap{width:126px;margin:0;}
+.ovr-side{flex:1;min-width:0;display:flex;flex-direction:column;gap:9px;}
+.ovr-line{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:14px;}
+.ovr-line .l{color:var(--muted);}
+.ovr-line .v{font-weight:700;white-space:nowrap;}
 /* Bibliothek-Filter */
 .libchips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;-webkit-overflow-scrolling:touch;}
 .libchips .chip{flex:none;padding:9px 12px;font-size:13px;}
@@ -577,6 +584,18 @@ const NUT=[
  {k:"k",l:"Kalium",u:"mg",kind:"micro"},
 ];
 
+/* ---------- Aktivitäten (Kalorienverbrauch) ----------
+   [Name, MET]. Verbrauch = MET × Gewicht(kg) × Dauer(h). Näherungswerte. */
+const ACTS=[
+ ["Spazieren",3.3],["Gehen (zügig)",4.3],["Joggen",7],["Laufen (schnell)",9.8],
+ ["Radfahren (locker)",6],["Radfahren (schnell)",10],["Schwimmen",8],["Wandern",6],
+ ["Krafttraining",5],["HIIT / Intervalle",8],["Seilspringen",11],["Rudergerät",7],
+ ["Crosstrainer",6],["Treppensteigen",8],["Fußball",7],["Tanzen",5],["Yoga",2.5],
+ ["Hausarbeit",3.3],["Gartenarbeit",4],["Einkaufen (zu Fuß)",3.5],
+];
+function actKcal(met,min,kg){return Math.round(met*(kg||75)*(min||0)/60);}
+function burnedToday(){return (state.activityLog[todayKey()]||[]).reduce((s,e)=>s+(e.kcal||0),0);}
+
 /* ---------- Schichten ---------- */
 const SHIFTS={
  frueh:{label:"Früh",when:"Nach der Arbeit, ~15–17 Uhr.",note:"Volle Energie — schwere Einheit ist drin. Bester Slot für harte Sätze.",train:true},
@@ -648,7 +667,7 @@ function generatePlan(focus,days){
  });
 }
 
-const K={plan:"hermes:plan",settings:"hermes:settings",profile:"hermes:profile",weight:"hermes:bw",history:"hermes:hist",last:"hermes:last",nextDay:"hermes:next",shifts:"hermes:shifts",food:"hermes:food",water:"hermes:water",custom:"hermes:custom",pr:"hermes:pr",rota:"hermes:rota"};
+const K={plan:"hermes:plan",settings:"hermes:settings",profile:"hermes:profile",weight:"hermes:bw",history:"hermes:hist",last:"hermes:last",nextDay:"hermes:next",shifts:"hermes:shifts",food:"hermes:food",water:"hermes:water",custom:"hermes:custom",pr:"hermes:pr",rota:"hermes:rota",acts:"hermes:acts"};
 function load(k,fb){try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch{return fb;}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.error(e);}}
 /* Datums-Schlüssel in LOKALER Zeit (nicht UTC) — wichtig für Nachtschicht:
@@ -667,10 +686,10 @@ const state={
  profile:Object.assign({sex:"m",age:30,height:180,activity:1.375,goal:"abnehmen"},load(K.profile,{})),
  bodyweight:load(K.weight,[]),history:load(K.history,[]),lastBest:load(K.last,{}),prs:load(K.pr,{}),lastPRs:[],
  nextDayId:load(K.nextDay,null),shiftByDate:load(K.shifts,{}),rota:load(K.rota,{start:"",seq:[]}),
- foodLog:load(K.food,{}),waterLog:load(K.water,{}),customFoods:load(K.custom,[]),
+ foodLog:load(K.food,{}),waterLog:load(K.water,{}),customFoods:load(K.custom,[]),activityLog:load(K.acts,{}),
  trainDayId:null,log:null,saved:false,note:"",acc:{},rest:{active:false,left:0,timer:null},
  libFor:null,foodPicker:false,wiz:{focus:"aufbau",days:2},trendMetric:"kcal",scanAdded:null,trainView:"log",
- mealFor:"fruehstueck",lastQuote:-1,trendDays:14,
+ mealFor:"fruehstueck",lastQuote:-1,trendDays:14,actAdding:false,
 };
 if(!state.plan.length)state.plan=defaultPlan();
 if(!state.plan.find(d=>d.id===state.nextDayId))state.nextDayId=state.plan[0].id;
@@ -722,7 +741,7 @@ const main=document.getElementById("main"),navEl=document.getElementById("nav");
    Scroll-Position erhalten; nur echte Ansichts-Wechsel springen nach oben. */
 let lastViewSig="";
 function render(){
- const sig=[state.tab,state.trainView,state.libFor?"lib":"",state.foodPicker?"fp":"",state.saved?"done":""].join("|");
+ const sig=[state.tab,state.trainView,state.libFor?"lib":"",state.foodPicker?"fp":"",state.actAdding?"act":"",state.saved?"done":""].join("|");
  const y=window.scrollY;
  const v={heute:viewHeute,training:viewTraining,essen:viewEssen,gewicht:viewGewicht,mehr:viewMehr}[state.tab];
  main.innerHTML=v();renderNav();wire();
@@ -751,7 +770,43 @@ function bar(label,cons,tgt,unit,over){
 }
 
 /* ---- Heute ---- */
+function ovrCard(tg,con){
+ if(!tg)return `<section class="card"><div class="between" style="margin-bottom:10px"><div class="eyebrow" style="margin:0">Heute</div><button class="btn-ghost btn btn-sm" style="width:auto;padding:7px 12px" data-go="essen">Essen öffnen</button></div><p class="muted">Trag dein Gewicht ein (Tab „Gewicht") — dann berechnet Hermes deinen Tagesbedarf und zeigt dir den Ring.</p><button class="btn btn-ghost btn-sm" data-actadd="1" style="margin-top:10px">+ Aktivität</button></section>`;
+ const eaten=Math.round(con.kcal),burned=Math.round(burnedToday());
+ return `<section class="card">
+  <div class="ovr">
+   <div class="ovr-ring">${kcalRing(con.kcal,tg.kcal)}</div>
+   <div class="ovr-side">
+    <div class="ovr-line"><span class="l">Gegessen</span><span class="v">${eaten} kcal</span></div>
+    <div class="ovr-line"><span class="l">Verbraucht</span><span class="v">${burned} kcal</span></div>
+    <div class="minirow" style="gap:8px;margin-top:2px">
+     <button class="btn btn-ghost btn-sm" data-actadd="1" style="flex:1">+ Aktivität</button>
+     <button class="btn btn-ghost btn-sm" data-go="essen" style="flex:1">Essen</button>
+    </div>
+   </div>
+  </div>
+ </section>`;
+}
+function viewActivityPicker(){
+ const kg=latestKg()||75;
+ const today=state.activityLog[todayKey()]||[];
+ const logged=today.length?today.map((e,i)=>`<div class="foodentry"><div><div class="fn">${esc(e.name)}</div><div class="fd">${e.min} min · ${Math.round(e.kcal)} kcal</div></div><button class="del" data-delact="${i}">✕</button></div>`).join(""):`<p class="muted sm">Heute noch keine Aktivität eingetragen.</p>`;
+ const items=ACTS.map((a,i)=>{const[name,met]=a;return `<div class="pick-item act-item" data-name="${esc(name.toLowerCase())}"><div class="pick-left"><div class="pn">${esc(name)}</div><div class="pmeta">~${actKcal(met,30,kg)} kcal / 30 min</div></div><div class="gramrow"><input class="gram-inp" type="number" inputmode="numeric" value="30" data-actmin="${i}"><span class="muted sm">min</span><button class="pick-add" data-actlog="${i}">+</button></div></div>`;}).join("");
+ return `<div class="stack">
+  <section class="card">
+   <div class="between" style="margin-bottom:12px"><div class="eyebrow" style="margin:0">Aktivität hinzufügen</div><button class="btn btn-ghost btn-sm" style="width:auto;padding:7px 12px" data-actback="1">Fertig</button></div>
+   <div class="between" style="margin-bottom:12px"><span class="muted sm">Heute verbraucht</span><b>${Math.round(burnedToday())} kcal</b></div>
+   ${logged}
+  </section>
+  <section class="card"><div class="eyebrow">Aktivität wählen</div>
+   <input class="searchbar" id="actSearch" placeholder="Aktivität suchen …">
+   <div id="actList">${items}</div>
+   <p class="muted sm" style="margin-top:6px">Dauer eintragen und + tippen. Verbrauch geschätzt aus Dauer und deinem Gewicht${latestKg()?"":" (Standard 75 kg — trag dein Gewicht ein für genauere Werte)"}. Näherungswerte.</p>
+  </section>
+ </div>`;
+}
 function viewHeute(){
+ if(state.actAdding)return viewActivityPicker();
  const ts=effShift(todayKey());
  const fromRota=!state.shiftByDate[todayKey()]&&!!rotaShift(todayKey());
  const wk=new Date();wk.setDate(wk.getDate()-6);
@@ -773,10 +828,8 @@ function viewHeute(){
   const body=restNight?`<div class="hero-rest">Heute kein Training. Schlaf nach, iss gut und tank auf — morgen greifst du wieder voll an.</div>`:(s.train?`<button class="btn" data-go="training">${esc(nd.label)} starten</button>`:`<div class="hero-rest">Heute leicht halten.</div>`);
   hero=`<section class="card hero"><div class="hero-tag">${s.label}schicht</div><div class="hero-when">${when}</div><p class="hero-note">${note}</p>${body}</section>`;}
  else hero=`<section class="card hero hero--empty">Wähl unten deine Schicht — dann zeigt dir Hermes, wann und wie der Tag am besten läuft.</section>`;
- const nutcard=tg?`<section class="card"><div class="between" style="margin-bottom:12px"><div class="eyebrow" style="margin:0">Heute gegessen</div><button class="btn-ghost btn btn-sm" style="width:auto;padding:7px 12px" data-go="essen">Öffnen</button></div>${bar("Kalorien",con.kcal,tg.kcal,"kcal",true)}${bar("Protein",con.p,tg.p,"g")}</section>`
-   :`<section class="card"><div class="between" style="margin-bottom:12px"><div class="eyebrow" style="margin:0">Heute gegessen</div><button class="btn-ghost btn btn-sm" style="width:auto;padding:7px 12px" data-go="essen">Öffnen</button></div><p class="muted">Gib dein Gewicht ein (Tab „Gewicht") — dann berechnet Hermes deinen Tagesbedarf.</p></section>`;
  return `<div class="stack">
-  ${nutcard}
+  ${ovrCard(tg,con)}
   ${hero}
   <div class="grid2" style="grid-template-columns:repeat(3,1fr)">
    <section class="card stat"><div class="stat-num" style="font-size:26px">${sess}</div><div class="stat-lbl">Einheiten /<br>7 Tage</div></section>
@@ -1259,6 +1312,11 @@ function wire(){
  const sv=main.querySelector("[data-save]");if(sv)sv.onclick=finish;
  const pr=main.querySelector("[data-prepare]");if(pr)pr.onclick=()=>switchDay(pr.dataset.prepare);
  // Essen
+ const aa=main.querySelector("[data-actadd]");if(aa)aa.onclick=()=>{state.actAdding=true;render();};
+ const ab=main.querySelector("[data-actback]");if(ab)ab.onclick=()=>{state.actAdding=false;render();};
+ main.querySelectorAll("[data-actlog]").forEach(b=>b.onclick=()=>{const i=+b.dataset.actlog;const[name,met]=ACTS[i];const mi=main.querySelector(`[data-actmin="${i}"]`);const min=Math.max(1,Math.round(parseFloat(mi?mi.value:30)||0));const kg=latestKg()||75;const kcal=actKcal(met,min,kg);const day=todayKey();const arr=[...(state.activityLog[day]||[]),{name,min,kcal}];state.activityLog={...state.activityLog,[day]:arr};save(K.acts,state.activityLog);render();showReward();});
+ main.querySelectorAll("[data-delact]").forEach(b=>b.onclick=()=>{const i=+b.dataset.delact;const day=todayKey();const arr=[...(state.activityLog[day]||[])];arr.splice(i,1);state.activityLog={...state.activityLog,[day]:arr};save(K.acts,state.activityLog);render();});
+ const asr=document.getElementById("actSearch");if(asr)asr.oninput=()=>{const q=asr.value.toLowerCase();main.querySelectorAll(".act-item").forEach(it=>{it.style.display=it.dataset.name.includes(q)?"":"none";});};
  main.querySelectorAll("[data-mealadd]").forEach(b=>b.onclick=()=>{state.mealFor=b.dataset.mealadd;state.foodPicker=true;render();});
  main.querySelectorAll("[data-mealsel]").forEach(b=>b.onclick=()=>{state.mealFor=b.dataset.mealsel;render();});
  const fb=main.querySelector("[data-foodback]");if(fb)fb.onclick=()=>{state.foodPicker=false;state.scanAdded=null;render();};
@@ -1342,9 +1400,9 @@ function reloadState(){
  state.plan=load(K.plan,defaultPlan());state.settings=Object.assign({theme:"obsidian",rest:90,protein:1.9},load(K.settings,{}));
  state.profile=Object.assign({sex:"m",age:30,height:180,activity:1.375,goal:"abnehmen"},load(K.profile,{}));
  state.bodyweight=load(K.weight,[]);state.history=load(K.history,[]);state.lastBest=load(K.last,{});state.prs=load(K.pr,{});state.lastPRs=[];
- state.shiftByDate=load(K.shifts,{});state.nextDayId=load(K.nextDay,null);state.foodLog=load(K.food,{});state.waterLog=load(K.water,{});state.customFoods=load(K.custom,[]);state.rota=load(K.rota,{start:"",seq:[]});
+ state.shiftByDate=load(K.shifts,{});state.nextDayId=load(K.nextDay,null);state.foodLog=load(K.food,{});state.waterLog=load(K.water,{});state.customFoods=load(K.custom,[]);state.activityLog=load(K.acts,{});state.rota=load(K.rota,{start:"",seq:[]});
  if(!state.plan.length)state.plan=defaultPlan();if(!state.plan.find(d=>d.id===state.nextDayId))state.nextDayId=state.plan[0].id;
- state.trainDayId=state.nextDayId;state.log=buildLog(state.nextDayId);state.saved=false;state.note="";state.acc={};state.libFor=null;state.foodPicker=false;
+ state.trainDayId=state.nextDayId;state.log=buildLog(state.nextDayId);state.saved=false;state.note="";state.acc={};state.libFor=null;state.foodPicker=false;state.actAdding=false;
  applyTheme();render();
 }
 
