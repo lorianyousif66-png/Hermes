@@ -772,18 +772,18 @@ function viewHeute(){
   const note=restNight?"Erster freier Tag nach dem Nacht-Block — der gehört dem Schlaf.":s.note;
   const body=restNight?`<div class="hero-rest">Heute kein Training. Schlaf nach, iss gut und tank auf — morgen greifst du wieder voll an.</div>`:(s.train?`<button class="btn" data-go="training">${esc(nd.label)} starten</button>`:`<div class="hero-rest">Heute leicht halten.</div>`);
   hero=`<section class="card hero"><div class="hero-tag">${s.label}schicht</div><div class="hero-when">${when}</div><p class="hero-note">${note}</p>${body}</section>`;}
- else hero=`<section class="card hero hero--empty">Wähl oben deine Schicht — dann zeigt dir Hermes, wann und wie der Tag am besten läuft.</section>`;
+ else hero=`<section class="card hero hero--empty">Wähl unten deine Schicht — dann zeigt dir Hermes, wann und wie der Tag am besten läuft.</section>`;
  const nutcard=tg?`<section class="card"><div class="between" style="margin-bottom:12px"><div class="eyebrow" style="margin:0">Heute gegessen</div><button class="btn-ghost btn btn-sm" style="width:auto;padding:7px 12px" data-go="essen">Öffnen</button></div>${bar("Kalorien",con.kcal,tg.kcal,"kcal",true)}${bar("Protein",con.p,tg.p,"g")}</section>`
-   :`<section class="card"><div class="eyebrow">Ernährung</div><p class="muted">Gib dein Profil (unter „Mehr") und dein Gewicht ein, dann berechnet Hermes deinen Tagesbedarf.</p></section>`;
+   :`<section class="card"><div class="between" style="margin-bottom:12px"><div class="eyebrow" style="margin:0">Heute gegessen</div><button class="btn-ghost btn btn-sm" style="width:auto;padding:7px 12px" data-go="essen">Öffnen</button></div><p class="muted">Gib dein Gewicht ein (Tab „Gewicht") — dann berechnet Hermes deinen Tagesbedarf.</p></section>`;
  return `<div class="stack">
-  <section class="card"><div class="eyebrow">Welche Schicht heute</div><div class="shiftrow">${chips}</div>${preview}</section>
+  ${nutcard}
   ${hero}
   <div class="grid2" style="grid-template-columns:repeat(3,1fr)">
    <section class="card stat"><div class="stat-num" style="font-size:26px">${sess}</div><div class="stat-lbl">Einheiten /<br>7 Tage</div></section>
    <section class="card stat"><div class="stat-num" style="font-size:26px">${kg??"—"}${kg?'<span class="u">kg</span>':''}</div><div class="stat-lbl">aktuelles<br>Gewicht</div></section>
    <section class="card stat"><div class="stat-num" style="font-size:26px">${foodStreak()}</div><div class="stat-lbl">Tage Essen<br>getrackt</div></section>
   </div>
-  ${nutcard}
+  <section class="card"><div class="eyebrow">Schicht heute</div><div class="shiftrow">${chips}</div>${preview}</section>
  </div>`;
 }
 
