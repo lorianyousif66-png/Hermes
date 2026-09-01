@@ -114,6 +114,7 @@ hermes:acts      { "YYYY-MM-DD": [{name, min, kcal}] }  Aktivitäten/Kalorienver
 hermes:custom    eigene Lebensmittel
 hermes:pr        persönliche Rekorde { übungsname: {score, weight, reps, unit, date} }
 hermes:rota      Schichtrhythmus { start: "YYYY-MM-DD", seq: [shiftKey, …] }
+hermes:dayplans  automatisch erzeugte Tagespläne je Datum inkl. manueller Änderungen
 ```
 
 ## Datenmodelle
@@ -192,6 +193,10 @@ hermes:rota      Schichtrhythmus { start: "YYYY-MM-DD", seq: [shiftKey, …] }
 - `doDownload()` / `doFileImport()` / `applyImportObj()` — Backup als Datei speichern/laden
   (zusätzlich zur Copy-Sicherung `doExport`/`doImport`).
 - `render()`, `wire()`, `bar()` (Fortschrittsbalken), `svgChart()` (Gewichtskurve).
+- `dayPlanTemplate()` / `ensureDayPlan()` / `applyDayCommand()` — erzeugt im Heute-Tab
+  pro Kalendertag einen schichtabhängigen Tagesplan. Freie deutsche Kurzbefehle können
+  Punkte hinzufügen, verschieben, erledigen oder entfernen; Spracheingabe nutzt optional
+  die eingebaute Web-Speech-API des Browsers.
 
 ## Fachliche Leitplanken (Trainings-/Ernährungslogik)
 

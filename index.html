@@ -251,6 +251,20 @@ details.steps li{font-size:13px;line-height:1.5;color:var(--text);margin-bottom:
 .rotaday--today{border-color:var(--text);}
 .rd-wd{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
 .rd-s{font-size:13px;font-weight:700;}
+/* Automatischer Tagesplan */
+.dayplan{display:flex;flex-direction:column;gap:2px;margin:2px 0 12px;}
+.dayitem{display:grid;grid-template-columns:38px 46px 1fr 30px;gap:7px;align-items:center;padding:9px 0;border-bottom:1px solid var(--hair);}
+.dayitem:last-child{border-bottom:none;}
+.daycheck{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:transparent;color:transparent;font-size:15px;cursor:pointer;}
+.daycheck--on{background:var(--inv-bg);border-color:var(--inv-bg);color:var(--inv-fg);}
+.daytime{font-size:12px;font-weight:700;color:var(--muted);}
+.daytext{font-size:14px;font-weight:500;line-height:1.35;min-width:0;}
+.dayitem--done .daytime,.dayitem--done .daytext{opacity:.45;text-decoration:line-through;}
+.daycmd{display:grid;grid-template-columns:1fr auto;gap:7px;}
+.daycmd .searchbar{margin:0;}
+.micbtn{width:46px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--text);font-size:19px;cursor:pointer;}
+.micbtn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;}
+.daymsg{font-size:12px;color:var(--muted);line-height:1.4;margin:8px 1px 0;min-height:17px;}
 .scan-added{background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-size:13px;line-height:1.4;margin-bottom:12px;}
 .scan{position:fixed;inset:0;background:#000;z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));}
 .scan.on{display:flex;}
@@ -667,7 +681,7 @@ function generatePlan(focus,days){
  });
 }
 
-const K={plan:"hermes:plan",settings:"hermes:settings",profile:"hermes:profile",weight:"hermes:bw",history:"hermes:hist",last:"hermes:last",nextDay:"hermes:next",shifts:"hermes:shifts",food:"hermes:food",water:"hermes:water",custom:"hermes:custom",pr:"hermes:pr",rota:"hermes:rota",acts:"hermes:acts"};
+const K={plan:"hermes:plan",settings:"hermes:settings",profile:"hermes:profile",weight:"hermes:bw",history:"hermes:hist",last:"hermes:last",nextDay:"hermes:next",shifts:"hermes:shifts",food:"hermes:food",water:"hermes:water",custom:"hermes:custom",pr:"hermes:pr",rota:"hermes:rota",acts:"hermes:acts",dayPlans:"hermes:dayplans"};
 function load(k,fb){try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch{return fb;}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.error(e);}}
 /* Datums-Schlüssel in LOKALER Zeit (nicht UTC) — wichtig für Nachtschicht:
@@ -686,10 +700,10 @@ const state={
  profile:Object.assign({sex:"m",age:30,height:180,activity:1.375,goal:"abnehmen"},load(K.profile,{})),
  bodyweight:load(K.weight,[]),history:load(K.history,[]),lastBest:load(K.last,{}),prs:load(K.pr,{}),lastPRs:[],
  nextDayId:load(K.nextDay,null),shiftByDate:load(K.shifts,{}),rota:load(K.rota,{start:"",seq:[]}),
- foodLog:load(K.food,{}),waterLog:load(K.water,{}),customFoods:load(K.custom,[]),activityLog:load(K.acts,{}),
+ foodLog:load(K.food,{}),waterLog:load(K.water,{}),customFoods:load(K.custom,[]),activityLog:load(K.acts,{}),dayPlans:load(K.dayPlans,{}),
  trainDayId:null,log:null,saved:false,note:"",acc:{},rest:{active:false,left:0,timer:null},
  libFor:null,foodPicker:false,wiz:{focus:"aufbau",days:2},trendMetric:"kcal",scanAdded:null,trainView:"log",
- mealFor:"fruehstueck",lastQuote:-1,trendDays:14,actAdding:false,
+ mealFor:"fruehstueck",lastQuote:-1,trendDays:14,actAdding:false,dayPlanMsg:"",
 };
 if(!state.plan.length)state.plan=defaultPlan();
 if(!state.plan.find(d=>d.id===state.nextDayId))state.nextDayId=state.plan[0].id;
@@ -769,6 +783,83 @@ function bar(label,cons,tgt,unit,over){
  return `<div class="nut"><div class="nut-top"><b>${label}</b><span class="nut-val">${Math.round(cons)} / ${Math.round(tgt)} ${unit}</span></div><div class="nut-bar"><div class="nut-fill${isOver?' over':''}" style="width:${pct}%"></div></div></div>`;
 }
 
+/* ---------- Automatischer Tagesplan ----------
+   Jeder Kalendertag wird beim ersten Öffnen einmal aus der effektiven Schicht erzeugt.
+   Danach bleibt er stabil, damit manuelle Änderungen nicht überschrieben werden. */
+function dayPlanTemplate(shift){
+ const next=dayById(state.nextDayId),train=next?next.label:"Training";
+ const templates={
+  frueh:[["05:00","Aufstehen & Wasser"],["05:30","Frühstück"],["06:00","Frühschicht"],["15:30",train+" – Training"],["17:30","Hauptmahlzeit"],["21:30","Schlaf vorbereiten"]],
+  spaet:[["08:00","Aufstehen & Wasser"],["08:30","Frühstück"],["10:00",train+" – Training"],["12:00","Hauptmahlzeit"],["14:00","Spätschicht"],["23:00","Schlaf vorbereiten"]],
+  nacht:[["13:00","Aufstehen & Wasser"],["13:30","Erste Mahlzeit"],["17:00","Spaziergang oder Mobility"],["19:00","Hauptmahlzeit"],["22:00","Nachtschicht"],["07:30","Schlafen"]],
+  frei:[["08:00","Aufstehen & Wasser"],["08:30","Frühstück"],["10:00",train+" – Training"],["13:00","Hauptmahlzeit"],["18:00","Tagesvorbereitung"],["23:00","Schlafen"]],
+  none:[["08:00","Aufstehen & Wasser"],["08:30","Frühstück"],["12:30","Hauptmahlzeit"],["18:00","Bewegung"],["22:30","Schlaf vorbereiten"]],
+ };
+ return (templates[shift||"none"]||templates.none).map(([time,text])=>({id:uid(),time,text,done:false}));
+}
+function saveDayPlans(){save(K.dayPlans,state.dayPlans);}
+function ensureDayPlan(day){
+ if(!state.dayPlans[day]){
+  state.dayPlans={...state.dayPlans,[day]:{shift:effShift(day)||null,customized:false,items:dayPlanTemplate(effShift(day))}};
+  saveDayPlans();
+ }
+ return state.dayPlans[day];
+}
+function updateDayPlan(day,plan){state.dayPlans={...state.dayPlans,[day]:plan};saveDayPlans();}
+function timeValue(t){const m=String(t||"").match(/^(\d{1,2}):(\d{2})$/);return m?(+m[1])*60+(+m[2]):9999;}
+function sortDayItems(items){return items.sort((a,b)=>timeValue(a.time)-timeValue(b.time));}
+function extractTime(txt){
+ const m=txt.match(/\b([01]?\d|2[0-3])(?:[:.]([0-5]\d))?\s*(?:uhr)?\b/i);
+ if(!m)return null;
+ return {value:String(+m[1]).padStart(2,"0")+":"+(m[2]||"00"),raw:m[0],index:m.index};
+}
+function cleanDaySubject(txt){
+ return txt.replace(/\b(heute|bitte|den|die|das|meinen|mein|termin|punkt)\b/gi," ").replace(/\b(hinzufügen|hinzu|eintragen|einplanen|plane|planen|füge|verschieben|verschiebe|verlegen|löschen|lösche|entfernen|entferne|streichen|streiche|absagen|fällt\s+aus|erledigt|abhaken|markieren)\b/gi," ").replace(/\b(auf|um)\s*$/i," ").replace(/\s+/g," ").replace(/^[,.:;\-\s]+|[,.:;\-\s]+$/g,"").trim();
+}
+function findDayItem(items,subject){
+ const q=subject.toLowerCase(),words=q.split(/\s+/).filter(w=>w.length>2);
+ return items.find(x=>x.text.toLowerCase().includes(q))||items.find(x=>words.some(w=>x.text.toLowerCase().includes(w)));
+}
+function applyDayCommand(raw){
+ const day=todayKey(),plan=ensureDayPlan(day),text=String(raw||"").trim();
+ if(!text){state.dayPlanMsg="Sag oder schreib zuerst, was sich ändert.";return false;}
+ const lower=text.toLowerCase(),tm=extractTime(text);let subject=cleanDaySubject(tm?text.replace(tm.raw,""):text);
+ const remove=/löschen|lösche|entfern|streich|absagen|fällt\s+aus/.test(lower);
+ const done=/erledigt|abhaken|markieren/.test(lower);
+ const move=/verschieb|verleg|\bauf\b/.test(lower);
+ const add=/hinzu|eintrag|einplan|\bplane\b|\bfüge\b/.test(lower);
+ let items=[...plan.items],hit=findDayItem(items,subject);
+ if(remove){
+  if(!hit){state.dayPlanMsg="Ich finde „"+(subject||"diesen Punkt")+"“ nicht im Tagesplan.";return false;}
+  items=items.filter(x=>x.id!==hit.id);state.dayPlanMsg="„"+hit.text+"“ wurde entfernt.";
+ }else if(done){
+  if(!hit){state.dayPlanMsg="Ich finde „"+(subject||"diesen Punkt")+"“ nicht im Tagesplan.";return false;}
+  items=items.map(x=>x.id===hit.id?{...x,done:true}:x);state.dayPlanMsg="„"+hit.text+"“ ist erledigt.";
+ }else if((move||(!add&&hit))&&tm){
+  if(!hit){state.dayPlanMsg="Ich finde „"+(subject||"diesen Punkt")+"“ nicht im Tagesplan.";return false;}
+  items=items.map(x=>x.id===hit.id?{...x,time:tm.value}:x);sortDayItems(items);state.dayPlanMsg="„"+hit.text+"“ ist jetzt um "+tm.value+" Uhr.";
+ }else if(tm&&subject){
+  items.push({id:uid(),time:tm.value,text:subject.charAt(0).toUpperCase()+subject.slice(1),done:false});sortDayItems(items);state.dayPlanMsg="„"+subject+"“ wurde um "+tm.value+" Uhr eingeplant.";
+ }else{
+  state.dayPlanMsg="Das habe ich nicht verstanden. Beispiel: „Training auf 18 Uhr verschieben“ oder „Arzt um 10:30 hinzufügen“.";return false;
+ }
+ updateDayPlan(day,{...plan,customized:true,items});return true;
+}
+function startDaySpeech(){
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){state.dayPlanMsg="Spracheingabe wird von diesem Browser nicht unterstützt. Du kannst den Satz eintippen.";render();return;}
+ const r=new SR();r.lang="de-DE";r.interimResults=false;r.maxAlternatives=1;
+ state.dayPlanMsg="Ich höre zu …";const msg=document.getElementById("dayPlanMsg");if(msg)msg.textContent=state.dayPlanMsg;
+ r.onresult=e=>{const said=e.results[0][0].transcript;const inp=document.getElementById("dayPlanCommand");if(inp)inp.value=said;applyDayCommand(said);render();};
+ r.onerror=()=>{state.dayPlanMsg="Ich konnte dich nicht verstehen. Versuch es erneut oder tippe den Satz ein.";render();};
+ try{r.start();}catch{state.dayPlanMsg="Spracheingabe konnte nicht gestartet werden.";render();}
+}
+function dayPlanCard(){
+ const day=todayKey(),plan=ensureDayPlan(day),items=plan.items;
+ const rows=items.length?items.map(x=>`<div class="dayitem${x.done?' dayitem--done':''}"><button class="daycheck${x.done?' daycheck--on':''}" data-daydone="${x.id}" aria-label="${x.done?'Als offen markieren':'Erledigt'}">✓</button><span class="daytime">${esc(x.time)}</span><span class="daytext">${esc(x.text)}</span><button class="del" data-daydel="${x.id}" aria-label="Löschen">×</button></div>`).join(""):`<p class="muted sm">Für heute sind keine Punkte mehr geplant.</p>`;
+ return `<section class="card"><div class="between" style="margin-bottom:8px"><div><div class="eyebrow" style="margin:0">Mein Tagesplan</div><div class="muted sm">Automatisch für ${plan.shift&&SHIFTS[plan.shift]?SHIFTS[plan.shift].label:"deinen Tag"}</div></div><button class="btn btn-ghost btn-sm" style="width:auto;padding:7px 10px" data-dayreset="1">Neu</button></div><div class="dayplan">${rows}</div><div class="daycmd"><input class="searchbar" id="dayPlanCommand" placeholder="z. B. Training auf 18 Uhr verschieben"><button class="micbtn" data-dayspeak="1" aria-label="Änderung sprechen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6"/></svg></button></div><button class="btn btn-sm" style="margin-top:7px" data-dayapply="1">Änderung übernehmen</button><div class="daymsg" id="dayPlanMsg">${esc(state.dayPlanMsg||"Du kannst Änderungen eintippen oder sprechen.")}</div></section>`;
+}
+
 /* ---- Heute ---- */
 function ovrCard(tg,con){
  if(!tg)return `<section class="card"><div class="between" style="margin-bottom:10px"><div class="eyebrow" style="margin:0">Heute</div><button class="btn-ghost btn btn-sm" style="width:auto;padding:7px 12px" data-go="essen">Essen öffnen</button></div><p class="muted">Trag dein Gewicht ein (Tab „Gewicht") — dann berechnet Hermes deinen Tagesbedarf und zeigt dir den Ring.</p><button class="btn btn-ghost btn-sm" data-actadd="1" style="margin-top:10px">+ Aktivität</button></section>`;
@@ -831,6 +922,7 @@ function viewHeute(){
  return `<div class="stack">
   ${ovrCard(tg,con)}
   ${hero}
+  ${dayPlanCard()}
   <div class="grid2" style="grid-template-columns:repeat(3,1fr)">
    <section class="card stat"><div class="stat-num" style="font-size:26px">${sess}</div><div class="stat-lbl">Einheiten /<br>7 Tage</div></section>
    <section class="card stat"><div class="stat-num" style="font-size:26px">${kg??"—"}${kg?'<span class="u">kg</span>':''}</div><div class="stat-lbl">aktuelles<br>Gewicht</div></section>
@@ -1298,7 +1390,13 @@ function wire(){
  navEl.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;state.libFor=null;state.foodPicker=false;if(b.dataset.tab==="training")state.trainView="log";render();});
  main.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{state.tab=b.dataset.go;if(b.dataset.go==="training")state.trainView="log";render();});
  // Heute
- main.querySelectorAll("[data-shift]").forEach(b=>b.onclick=()=>{const day=todayKey(),k=b.dataset.shift,sbd={...state.shiftByDate};if(sbd[day]===k)delete sbd[day];else sbd[day]=k;state.shiftByDate=sbd;save(K.shifts,sbd);render();});
+ main.querySelectorAll("[data-shift]").forEach(b=>b.onclick=()=>{const day=todayKey(),k=b.dataset.shift,sbd={...state.shiftByDate},oldPlan=state.dayPlans[day];if(sbd[day]===k)delete sbd[day];else sbd[day]=k;state.shiftByDate=sbd;save(K.shifts,sbd);if(oldPlan&&!oldPlan.customized){const dp={...state.dayPlans};delete dp[day];state.dayPlans=dp;saveDayPlans();}else if(oldPlan)updateDayPlan(day,{...oldPlan,shift:effShift(day)||null});state.dayPlanMsg=oldPlan&&oldPlan.customized?"Schicht aktualisiert — deine Änderungen bleiben erhalten.":"Tagesplan an die Schicht angepasst.";render();});
+ main.querySelectorAll("[data-daydone]").forEach(b=>b.onclick=()=>{const day=todayKey(),p=ensureDayPlan(day);updateDayPlan(day,{...p,customized:true,items:p.items.map(x=>x.id===b.dataset.daydone?{...x,done:!x.done}:x)});render();});
+ main.querySelectorAll("[data-daydel]").forEach(b=>b.onclick=()=>{const day=todayKey(),p=ensureDayPlan(day);updateDayPlan(day,{...p,customized:true,items:p.items.filter(x=>x.id!==b.dataset.daydel)});state.dayPlanMsg="Punkt entfernt.";render();});
+ const dpa=main.querySelector("[data-dayapply]");if(dpa)dpa.onclick=()=>{const inp=document.getElementById("dayPlanCommand");if(applyDayCommand(inp&&inp.value))render();else{const msg=document.getElementById("dayPlanMsg");if(msg)msg.textContent=state.dayPlanMsg;}};
+ const dpi=document.getElementById("dayPlanCommand");if(dpi)dpi.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();if(applyDayCommand(dpi.value))render();else{const msg=document.getElementById("dayPlanMsg");if(msg)msg.textContent=state.dayPlanMsg;}}};
+ const dps=main.querySelector("[data-dayspeak]");if(dps)dps.onclick=startDaySpeech;
+ const dpr=main.querySelector("[data-dayreset]");if(dpr)dpr.onclick=()=>{const day=todayKey(),dp={...state.dayPlans};delete dp[day];state.dayPlans=dp;saveDayPlans();state.dayPlanMsg="Tagesplan wurde neu erzeugt.";render();};
  // Training
  main.querySelectorAll("[data-trainview]").forEach(b=>b.onclick=()=>{state.trainView=b.dataset.trainview;state.libFor=null;render();});
  main.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>switchDay(b.dataset.day));
@@ -1400,7 +1498,7 @@ function reloadState(){
  state.plan=load(K.plan,defaultPlan());state.settings=Object.assign({theme:"obsidian",rest:90,protein:1.9},load(K.settings,{}));
  state.profile=Object.assign({sex:"m",age:30,height:180,activity:1.375,goal:"abnehmen"},load(K.profile,{}));
  state.bodyweight=load(K.weight,[]);state.history=load(K.history,[]);state.lastBest=load(K.last,{});state.prs=load(K.pr,{});state.lastPRs=[];
- state.shiftByDate=load(K.shifts,{});state.nextDayId=load(K.nextDay,null);state.foodLog=load(K.food,{});state.waterLog=load(K.water,{});state.customFoods=load(K.custom,[]);state.activityLog=load(K.acts,{});state.rota=load(K.rota,{start:"",seq:[]});
+ state.shiftByDate=load(K.shifts,{});state.nextDayId=load(K.nextDay,null);state.foodLog=load(K.food,{});state.waterLog=load(K.water,{});state.customFoods=load(K.custom,[]);state.activityLog=load(K.acts,{});state.rota=load(K.rota,{start:"",seq:[]});state.dayPlans=load(K.dayPlans,{});state.dayPlanMsg="";
  if(!state.plan.length)state.plan=defaultPlan();if(!state.plan.find(d=>d.id===state.nextDayId))state.nextDayId=state.plan[0].id;
  state.trainDayId=state.nextDayId;state.log=buildLog(state.nextDayId);state.saved=false;state.note="";state.acc={};state.libFor=null;state.foodPicker=false;state.actAdding=false;
  applyTheme();render();

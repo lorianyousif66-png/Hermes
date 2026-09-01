@@ -4,7 +4,7 @@
      ohne Netz die zuletzt gespeicherte. So kommen Updates automatisch beim Öffnen an.
    - Übrige Dateien (manifest, icon, Fonts) = "Cache zuerst", im Hintergrund nachgeladen.
    CACHE-Version bei größeren Änderungen erhöhen (v2 -> v3 …), damit alte Caches weichen. */
-const CACHE = "hermes-v4";
+const CACHE = "hermes-v5";
 const ASSETS = ["./", "./index.html", "./manifest.json", "./icon.svg"];
 
 self.addEventListener("install", e => {
