@@ -58,6 +58,12 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
   erhalten Satzwerte und Notizen nach Reload. Beim Abschluss wird der Entwurf entfernt.
   Vor Wechsel zu einer anderen Einheit wird bei ungespeicherten Eingaben nachgefragt.
 - Pausen basieren auf einer Endzeit statt auf gezählten Intervallen; Hintergrundpausen verfälschen sie nicht.
+- Training → Einheit: Satz nach links wischen (kurz = Löschbutton, weit = direkt entfernen).
+  Alternativ die Satznummer antippen. Pointer Events mit Richtungsbindung und `touch-action: pan-y pinch-zoom`
+  lassen vertikales Scrollen zu; Abbruch und kurze Wischbewegungen löschen nichts.
+  `removeTrainingSet` / `undoTrainingSet` ändern nur die laufende Einheit (mindestens ein Satz bleibt).
+  Undo erscheint kurz unten und dauerhaft oben in der Einheit; Gewichte, Wiederholungen und Erledigt-Status
+  werden vollständig wiederhergestellt. Auch leere, strukturell geänderte Einheiten werden zwischengespeichert.
 - Lebensmittelauswahl: zuletzt verwendete Einträge priorisieren, 12 Ergebnisse zunächst anzeigen,
   Suchfilter und leere Treffer erklären; Einzelzutaten mit kurzem Status statt Overlay bestätigen.
 - Backups werden vollständig validiert, bevor Daten geschrieben werden. Die Gewichtskurve verwendet

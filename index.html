@@ -79,6 +79,19 @@ details.steps li{font-size:13px;line-height:1.5;color:var(--text);margin-bottom:
 .sethead span{text-align:center;}.sethead span:first-child{text-align:left;}
 .setrow{display:grid;grid-template-columns:26px 1fr 1fr 42px;gap:8px;align-items:center;margin-bottom:7px;}
 .setrow--done{opacity:.5;}
+.set-swipe{position:relative;overflow:hidden;border-radius:12px;margin-bottom:7px;touch-action:pan-y pinch-zoom;background:var(--surface2)}
+.set-swipe .setrow{position:relative;z-index:1;margin-bottom:0;padding:3px 0;background:var(--surface);transition:transform .18s ease-out;touch-action:pan-y pinch-zoom}
+.set-swipe .setrow--done{opacity:1}.set-swipe .setrow--done>*{opacity:.5}
+.set-swipe.dragging .setrow{transition:none;user-select:none}
+.set-swipe.open .setrow{transform:translateX(-82px)}
+.set-swipe.ready{background:var(--inv-bg)}
+.set-remove{position:absolute;inset:0 0 0 auto;width:82px;border:0;background:transparent;color:var(--text);font-size:11px;font-weight:600;cursor:pointer;padding:4px}
+.set-swipe.ready .set-remove{color:var(--inv-fg)}
+.setnum-button{border:0;background:transparent;font:inherit;min-height:44px;padding:0;cursor:pointer;color:var(--muted)}
+.set-swipe .setnum-button:focus-visible{outline-offset:-2px}.set-swipe .setrow:focus-within{overflow:visible}
+.set-undo{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border:1px solid var(--line);border-radius:14px;font-size:12px;background:var(--surface2)}
+.set-undo button{border:0;background:none;color:var(--text);font-weight:600;padding:10px 0;min-height:44px;cursor:pointer}
+.toast button{margin-left:14px;padding:8px 0;border:0;background:none;color:inherit;text-decoration:underline;font-weight:700;cursor:pointer;min-height:44px}
 .setnum{font-weight:600;color:var(--muted);text-align:center;}
 .inp{background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:11px 8px;font-size:16px;text-align:center;width:100%;font-family:inherit;}
 .inp:focus{outline:none;border-color:var(--text);}.inp:disabled{opacity:.35;}
@@ -908,7 +921,7 @@ function dayPlanCard(){
 /* Small improvements shared across screens. No new runtime dependencies. */
 let dayUndo=null,taskEditor=null,toastTimer=null,activeDate=todayKey();
 K.draft='hermes:draft';
-function notifyUser(message){const el=document.getElementById('toast');el.textContent=message;clearTimeout(toastTimer);toastTimer=setTimeout(()=>{el.textContent='';},3200);}
+function notifyUser(message,action){const el=document.getElementById('toast');el.textContent=message;if(action){const b=document.createElement('button');b.textContent=action.label;b.onclick=action.run;el.appendChild(b);}clearTimeout(toastTimer);toastTimer=setTimeout(()=>{el.textContent='';},action?8000:3200);}
 function pageHeading(){
  const titles={heute:['Dein Tag. Dein Tempo.','Training, Essen und Alltag in deinem Rhythmus.'],training:['Stärker. Schritt für Schritt.','Deine nächste Wiederholung zählt.'],essen:['Gut versorgt.','Mahlzeiten, Wasser und dein Überblick.'],gewicht:['Dein Fortschritt.','Einzelne Werte schwanken. Der Verlauf zählt.'],mehr:['So passt es zu dir.','Deine Ziele, dein Rhythmus, deine Daten.']};
  const [title,sub]=titles[state.tab];
@@ -917,6 +930,7 @@ function pageHeading(){
 }
 function taskEditorForm(item){return `<form id="taskForm" class="inline-form"><label>Was steht an?<input id="taskTitle" class="inp" style="text-align:left" required maxlength="100" value="${esc(item?.text||'')}" placeholder="Zum Beispiel: Einkaufen"></label><div class="form-pair"><label>Uhrzeit<input id="taskTime" class="inp" type="time" required value="${esc(item?.time||'17:00')}"></label><label>Tag<select id="taskOffset" class="sel"><option value="0">Heute</option><option value="1" ${item?.dayOffset?'selected':''}>Folgetag (nach Mitternacht)</option></select></label></div><div class="form-actions"><button type="button" class="btn btn-ghost btn-sm" data-taskcancel>Abbrechen</button><button class="btn btn-sm" type="submit">Speichern</button></div></form>`;}
 function wireUpgrade(){
+ wireSetSwipes();
  const search=document.getElementById('foodSearch');
  if(search){
   let mode='all',expanded=false;
@@ -938,7 +952,8 @@ function wireUpgrade(){
 }
 function persistWorkout(){
  if(!state.log||state.saved)return;
- const hasData=state.note||state.log.some(e=>e.sets.some(s=>s.done||s.weight||s.reps));
+ const planned=dayById(state.trainDayId);
+ const hasData=state.note||state.log.some((e,i)=>e.sets.some(s=>s.done||s.weight||s.reps)||e.sets.length!==(planned.exercises[i]?.sets||0));
  if(hasData)save(K.draft,{dayId:state.trainDayId,log:state.log,note:state.note,date:todayKey()});
  else localStorage.removeItem(K.draft);
 }
@@ -1043,13 +1058,15 @@ function viewTraining(){
   const u=UNITS[ex.unit]||UNITS.kg,noW=ex.unit!=="kg",lb=state.lastBest[ex.name],pr=state.prs[ex.name];
   let lbTxt="";if(lb){let t=lb.unit==="kg"?`${esc(lb.weight||"—")} kg × ${esc(lb.reps||"—")}`:`${esc(lb.reps||"—")} ${UNITS[lb.unit]?UNITS[lb.unit].r:""}`;lbTxt=`<div class="lastline">Letztes Mal: <b>${t}</b>${pr?` · ★ Rekord: <b>${esc(prTxt(pr))}</b>`:""}</div>`;}
   else if(pr)lbTxt=`<div class="lastline">★ Rekord: <b>${esc(prTxt(pr))}</b></div>`;
-  const rows=ex.sets.map((s,si)=>`<div class="setrow${s.done?' setrow--done':''}" data-row="${ei}-${si}"><span class="setnum">${si+1}</span><input class="inp" type="number" inputmode="decimal" placeholder="${noW?'—':'0'}" value="${esc(s.weight)}" ${noW?'disabled':''} data-f="weight" data-ei="${ei}" data-si="${si}"><input class="inp" type="number" inputmode="numeric" placeholder="0" value="${esc(s.reps)}" data-f="reps" data-ei="${ei}" data-si="${si}"><button class="check${s.done?' check--on':''}" data-check="${ei}-${si}">✓</button></div>`).join("");
+  const rows=ex.sets.map((s,si)=>`<div class="set-swipe" data-set-swipe="${ei}-${si}"><button class="set-remove" data-removeset="${ei}-${si}" tabindex="-1" aria-hidden="true" aria-label="${esc(ex.name)}, Satz ${si+1} löschen" ${ex.sets.length<=1?'disabled':''}>Löschen</button><div class="setrow${s.done?' setrow--done':''}" data-row="${ei}-${si}"><button class="setnum setnum-button" data-setmenu="${ei}-${si}" aria-label="${esc(ex.name)}, Satz ${si+1}: Löschoption anzeigen" aria-expanded="false" ${ex.sets.length<=1?'disabled':''}>${si+1}</button><input class="inp" type="number" inputmode="decimal" placeholder="${noW?'—':'0'}" value="${esc(s.weight)}" ${noW?'disabled':''} data-f="weight" data-ei="${ei}" data-si="${si}"><input class="inp" type="number" inputmode="numeric" placeholder="0" value="${esc(s.reps)}" data-f="reps" data-ei="${ei}" data-si="${si}"><button class="check${s.done?' check--on':''}" data-check="${ei}-${si}">✓</button></div></div>`).join("");
   const steps=(ex.steps&&ex.steps.length)?`<details class="steps"><summary>Anleitung</summary><ol>${ex.steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ol></details>`:"";
   return `<section class="card"><div class="ex-head"><div class="ex-name" data-exinfo="${esc(ex.name)}">${esc(ex.name)} <span class="ex-i">ⓘ</span></div><div class="ex-target">${ex.sets.length} × ${esc(ex.reps)}</div></div>${lbTxt}${steps}<div class="sethead"><span>Satz</span><span>${u.w}</span><span>${u.r}</span><span>✓</span></div>${rows}<div class="minirow" style="gap:8px;margin-top:10px"><button class="setbtn" data-addset="${ei}">+ Satz</button><button class="setbtn" data-delset="${ei}" ${ex.sets.length<=1?"disabled":""}>− Satz</button><button class="restbtn" style="margin-top:0;flex:1" data-startrest="1">⧖ Pause (${state.settings.rest}s)</button></div></section>`;
  }).join("");
  const {done,total}=counts();
  return `<div class="stack">
   ${nav}
+  ${setUndo&&setUndo.log===state.log?`<div class="set-undo" role="status"><span>Satz ${setUndo.index+1} entfernt · ${esc(setUndo.exercise.name)}</span><button data-undoset>Rückgängig</button></div>`:''}
+  <p class="tip">Satz nach links wischen zum Löschen. Oder die Satznummer antippen. Ein Satz bleibt je Übung erhalten.</p>
   <section class="card"><div class="dayswitch">${days}</div><div class="progress"><div class="progress-bar" id="progBar" style="width:${total?done/total*100:0}%"></div></div><div class="muted sm" id="progTxt">${done} / ${total} Sätze erledigt</div></section>
   ${exHtml}
   <section class="card"><div class="eyebrow">Notiz</div><textarea class="notearea" id="noteInp" placeholder="Wie lief's? Energie, Fortschritt …">${esc(state.note)}</textarea><p class="draft-note">Deine laufende Einheit wird auf diesem Gerät automatisch zwischengespeichert.</p></section>
@@ -1115,6 +1132,46 @@ function viewDone(){
  const prHtml=state.lastPRs.length?`<div class="prlist">${state.lastPRs.map(p=>`<div class="pritem"><span class="prstar">★</span><div><div class="prname">${esc(p.name)}</div><div class="prdet">Neuer Bestwert: <b>${esc(prTxt(p))}</b>${p.prev?` <span class="prold">(vorher ${esc(prTxt(p.prev))})</span>`:""}</div></div></div>`).join("")}</div>`:"";
  return `<section class="card done"><div class="done-check">✓</div><div class="done-title">${esc(dayById(state.trainDayId).label)} gespeichert</div>${prHtml}<p class="muted">Als Nächstes dran: <b style="color:var(--text)">${esc(next.label)}</b>. Gönn dir Erholung — du wächst in der Pause.</p><button class="btn" data-prepare="${next.id}">Nächste Einheit vorbereiten</button></section>`;
 }
+/* Session-only swipe deletion. Keep the original set object so undo restores all values. */
+let setUndo=null,suppressSetClickUntil=0;
+function removeTrainingSet(ei,si){
+ const exercise=state.log[ei];if(state.saved||!exercise||exercise.sets.length<=1||!exercise.sets[si])return;
+ const [set]=exercise.sets.splice(si,1);setUndo={log:state.log,exercise,index:si,set};
+ if(set.done)stopRest();buzz(12);render();notifyUser('Satz entfernt.',{label:'Rückgängig',run:undoTrainingSet});
+}
+function undoTrainingSet(){if(!setUndo||setUndo.log!==state.log||state.saved)return;const {exercise,index,set}=setUndo;exercise.sets.splice(Math.min(index,exercise.sets.length),0,set);setUndo=null;render();notifyUser('Satz wiederhergestellt.');}
+function wireSetSwipes(){
+ const undo=main.querySelector('[data-undoset]');if(undo)undo.onclick=undoTrainingSet;
+ function reveal(wrap,open){wrap.classList.toggle('open',open);wrap.classList.remove('dragging','ready');wrap.querySelector('.setrow').style.transform='';const del=wrap.querySelector('.set-remove');del.tabIndex=open?0:-1;del.setAttribute('aria-hidden',String(!open));wrap.querySelector('[data-setmenu]').setAttribute('aria-expanded',String(open));}
+ main.querySelectorAll('[data-set-swipe]').forEach(wrap=>{
+  const [ei,si]=wrap.dataset.setSwipe.split('-').map(Number),row=wrap.querySelector('.setrow'),del=wrap.querySelector('.set-remove'),menu=wrap.querySelector('[data-setmenu]');let gesture=null;
+  const closeOthers=()=>main.querySelectorAll('.set-swipe.open').forEach(other=>{if(other!==wrap)reveal(other,false);});
+  menu.onclick=()=>{closeOthers();reveal(wrap,!wrap.classList.contains('open'));};
+  del.onclick=()=>removeTrainingSet(ei,si);
+  wrap.addEventListener('keydown',e=>{if(e.key==='Escape'){reveal(wrap,false);menu.focus();}});
+  wrap.addEventListener('pointerdown',e=>{
+   if(!e.isPrimary||e.button!==0||e.target.closest('.set-remove')||state.log[ei].sets.length<=1)return;
+   suppressSetClickUntil=0;closeOthers();gesture={id:e.pointerId,x:e.clientX,y:e.clientY,base:wrap.classList.contains('open')?-82:0,dx:0,axis:null,threshold:Math.min(130,wrap.clientWidth*.42)};
+  });
+  wrap.addEventListener('pointermove',e=>{
+   if(!gesture||e.pointerId!==gesture.id)return;
+   const dx=e.clientX-gesture.x,dy=e.clientY-gesture.y;
+   if(!gesture.axis){if(Math.max(Math.abs(dx),Math.abs(dy))<10)return;if(Math.abs(dy)>=Math.abs(dx)*.8){gesture=null;return;}if(dx>0&&!gesture.base){gesture=null;return;}gesture.axis='x';wrap.setPointerCapture(e.pointerId);wrap.classList.add('dragging');}
+   if(e.cancelable)e.preventDefault();gesture.dx=Math.max(-wrap.clientWidth,Math.min(0,gesture.base+dx));row.style.transform=`translateX(${gesture.dx}px)`;wrap.classList.toggle('ready',-gesture.dx>=gesture.threshold);suppressSetClickUntil=Date.now()+400;
+  });
+  const end=(e,cancel=false)=>{
+   if(!gesture||gesture.id!==e.pointerId)return;const g=gesture;gesture=null;
+   if(wrap.hasPointerCapture(e.pointerId))wrap.releasePointerCapture(e.pointerId);
+   if(!g.axis)return;
+   suppressSetClickUntil=Date.now()+400;
+   if(!cancel&&-g.dx>=g.threshold)removeTrainingSet(ei,si);else reveal(wrap,!cancel&&-g.dx>=42);
+  };
+  wrap.addEventListener('pointerup',e=>end(e));wrap.addEventListener('pointercancel',e=>end(e,true));wrap.addEventListener('lostpointercapture',e=>{if(gesture&&e.target===wrap&&!wrap.hasPointerCapture(e.pointerId))end(e,true);});
+ });
+}
+// Prevent the synthetic click after dragging from toggling a set or opening the keyboard.
+document.addEventListener('click',e=>{if(e.detail&&Date.now()<suppressSetClickUntil&&main.contains(e.target)){e.preventDefault();e.stopImmediatePropagation();}},true);
+document.addEventListener('pointerdown',()=>{suppressSetClickUntil=0;},true);
 function counts(){const done=state.log.reduce((a,ex)=>a+ex.sets.filter(s=>s.done).length,0);const total=state.log.reduce((a,ex)=>a+ex.sets.length,0);return {done,total};}
 function updateProgress(){const {done,total}=counts();const b=document.getElementById("progBar");if(b)b.style.width=(total?done/total*100:0)+"%";const t=document.getElementById("progTxt");if(t)t.textContent=`${done} / ${total} Sätze erledigt`;const s=document.getElementById("saveBtn");if(s)s.disabled=done===0;}
 /* PR-Wertung: bei kg zählt geschätztes 1RM (Epley: Gewicht × (1 + Wdh./30)),
@@ -1498,7 +1555,7 @@ function wire(){
  main.querySelectorAll("[data-check]").forEach(btn=>btn.onclick=()=>{const [ei,si]=btn.dataset.check.split("-").map(Number);const s=state.log[ei].sets[si];s.done=!s.done;if(s.done)buzz(10);btn.classList.toggle("check--on",s.done);const r=main.querySelector(`[data-row="${ei}-${si}"]`);if(r)r.classList.toggle("setrow--done",s.done);updateProgress();if(s.done&&state.settings.rest>0)startRest();});
  main.querySelectorAll("[data-startrest]").forEach(b=>b.onclick=startRest);
  main.querySelectorAll("[data-addset]").forEach(b=>b.onclick=()=>{state.log[+b.dataset.addset].sets.push({weight:"",reps:"",done:false});render();});
- main.querySelectorAll("[data-delset]").forEach(b=>b.onclick=()=>{const ex=state.log[+b.dataset.delset];if(ex.sets.length>1){ex.sets.pop();render();}});
+ main.querySelectorAll("[data-delset]").forEach(b=>b.onclick=()=>{const ei=+b.dataset.delset;removeTrainingSet(ei,state.log[ei].sets.length-1);});
  main.querySelectorAll("[data-exinfo]").forEach(el=>el.onclick=()=>openExInfo(el.dataset.exinfo));
  const note=document.getElementById("noteInp");if(note)note.oninput=()=>{state.note=note.value;};
  const sv=main.querySelector("[data-save]");if(sv)sv.onclick=finish;
