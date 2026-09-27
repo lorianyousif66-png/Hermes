@@ -2,7 +2,7 @@
 <html lang="de" data-theme="obsidian">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Hermes</title>
 <meta name="theme-color" content="#0A0A0A" id="themeColor" />
 <meta name="mobile-web-app-capable" content="yes" />
@@ -283,15 +283,45 @@ details.steps li{font-size:13px;line-height:1.5;color:var(--text);margin-bottom:
 .btn:active,.chip:active,.daybtn:active,.setbtn:active,.addbtn:active,.pick-add:active,.portchip:active,.iconbtn:active,.water-btns button:active,.restbtn:active,.scan-btn:active,.rotachip:active{transform:scale(.95);}
 .btn:disabled{opacity:.45;}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;}}
+/* Hermes 2 — original Obsidian / Marmor colours, a quieter hierarchy. */
+:root{color-scheme:dark} :root[data-theme="marmor"]{color-scheme:light}
+body{font-variant-numeric:tabular-nums;line-height:1.45}
+button,input,select,textarea{font-family:inherit}button{touch-action:manipulation}
+button:focus-visible,summary:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--text);outline-offset:4px}
+.app{max-width:560px;padding-bottom:calc(115px + env(safe-area-inset-bottom))}
+.hd{border:0;padding:calc(24px + env(safe-area-inset-top)) 24px 8px;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:10px}.brand-mark{display:grid;place-items:center;background:var(--inv-bg);color:var(--inv-fg);width:34px;height:34px;border-radius:11px;font-weight:800;font-size:20px}
+.wordmark{font-size:20px;letter-spacing:-.8px}.edition{font-size:10px;text-transform:uppercase;letter-spacing:1.6px;color:var(--muted)}
+.main{padding:18px 20px}.stack{gap:16px}.card{border-radius:22px;padding:20px;border-color:var(--hair);box-shadow:0 3px 14px #00000008}
+.page-heading{margin:4px 4px 24px}.page-heading h1{font-size:36px;line-height:1.1;letter-spacing:-1.6px;margin:7px 0 9px;font-weight:600}.page-heading p{color:var(--muted);font-size:13px;margin:0}.eyebrow{font-size:10px;letter-spacing:1.8px;font-weight:600;margin-bottom:14px}
+.date-line{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;color:var(--muted)}.status-pill{padding:5px 9px;border:1px solid var(--line);border-radius:20px;font-size:10px;color:var(--text)}
+.btn{border-radius:13px;min-height:46px;font-size:14px;padding:13px 15px;transition:transform .15s,opacity .15s,background .15s}.btn:active,.chip:active,.daycheck:active{transform:scale(.97)}.btn-sm{font-size:12px;min-height:40px;padding:10px 12px}
+.chip,.daybtn{border-radius:12px;min-height:44px;font-size:13px}.dayswitch{gap:6px}.shiftrow{gap:6px}
+.inp,.sel,.searchbar,.notearea{border-radius:12px;background:var(--bg);font-size:16px;min-height:44px}.field label{font-size:12px}.notearea{min-height:80px}.searchbar{padding:14px}
+.hero{position:relative;overflow:hidden;border-left:1px solid var(--line);background:var(--inv-bg);color:var(--inv-fg);padding:24px}.hero::after{content:"";position:absolute;right:-35px;top:-35px;width:160px;height:160px;border:1px solid currentColor;border-radius:50%;opacity:.09;pointer-events:none}.hero .eyebrow,.hero .hero-note,.hero .hero-rest{color:inherit;opacity:.7}.hero-tag{font-size:27px;font-weight:600;letter-spacing:-.9px}.hero-when{font-size:14px;font-weight:500}.hero .btn{background:var(--inv-fg);color:var(--inv-bg)}.hero-note{margin:10px 0 18px;font-size:13px}.hero--empty{background:var(--surface);color:var(--muted);border-style:dashed}
+.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.summary-grid .stat{padding:16px 12px;box-shadow:none}.stat-num{font-weight:500;letter-spacing:-1px}.stat-lbl{font-size:11px;line-height:1.5}.stat-num .u{font-size:11px}
+.section-top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}.section-top h2{font-size:18px;letter-spacing:-.5px;margin:0;font-weight:600}.section-top p{font-size:11px;color:var(--muted);margin:4px 0 0}.textbtn{background:none;color:var(--text);border:0;padding:10px 0;font-size:12px;cursor:pointer;min-height:44px}
+.ringwrap{width:148px}.rt-num{font-size:34px;letter-spacing:-1.6px;font-weight:500}.rt-sub,.rt-left{font-size:10px}.ovr-side{min-width:0}.ovr-line .l{font-size:11px}.ovr-line .v{font-weight:500}.nut-bar{height:5px}.nut-top{font-size:12px}.mini-macros{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;border-top:1px solid var(--hair);padding-top:16px;margin-top:18px}.mini-macros b{font-size:17px;font-weight:500}.mini-macros span{display:block;font-size:10px;color:var(--muted);margin-top:2px}
+.quick-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.quick-actions button{background:var(--surface);border:1px solid var(--hair);color:var(--text);border-radius:16px;padding:15px 5px;cursor:pointer;font-size:11px;min-height:70px}.quick-actions svg{display:block;width:20px;height:20px;margin:0 auto 8px;fill:none;stroke:currentColor;stroke-width:1.6}
+.water-card{display:flex;align-items:center;justify-content:space-between;gap:14px}.water-card strong{font-size:23px;font-weight:500;letter-spacing:-.7px}.water-card small{font-size:12px;color:var(--muted)}.water-card .eyebrow{margin-bottom:6px}.water-dots{display:flex;gap:4px;margin-top:9px}.water-dots i{width:15px;height:5px;background:var(--line);border-radius:5px}.water-dots i.filled{background:var(--text)}
+.dayplan{gap:0;margin:14px 0}.dayitem{grid-template-columns:44px 48px minmax(0,1fr) 36px;gap:6px;padding:10px 0;position:relative}.daycheck{width:34px;height:34px;border-radius:50%;margin:5px;cursor:pointer}.daytime{font-size:11px;line-height:1.6}.daytime small{display:block;font-size:9px;font-weight:400}.daytext{font-size:13px;background:transparent;color:var(--text);border:0;text-align:left;cursor:pointer;padding:8px 0;overflow-wrap:anywhere;min-height:44px}.dayitem--done .daytext{opacity:.4}.dayitem--next .daytext{font-weight:700}.dayitem--next .daytime{color:var(--text)}.dayitem .del{padding:0;width:36px;min-height:44px;font-size:18px}.day-progress{height:3px;background:var(--line);border-radius:4px;overflow:hidden}.day-progress span{height:100%;display:block;background:var(--text);transition:width .25s}
+.daycmd{grid-template-columns:minmax(0,1fr) 44px}.daycmd input{font-size:14px}.daymsg{margin-top:12px;line-height:1.6}.planner-help{margin-top:16px;padding-top:14px;border-top:1px solid var(--hair);font-size:12px}.planner-help summary{cursor:pointer;color:var(--muted)}.planner-help p{color:var(--muted);line-height:1.6}.inline-form{display:grid;gap:10px;margin-top:14px}.inline-form label{font-size:12px;color:var(--muted);display:grid;gap:6px}.form-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}.form-actions{display:flex;gap:8px}.form-actions .btn{flex:1}.command-examples{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.command-examples button{border:1px solid var(--line);background:none;color:var(--muted);border-radius:20px;padding:8px 10px;font-size:10px;cursor:pointer}.undo-button{border:0;background:none;color:var(--text);font-size:12px;text-decoration:underline;padding:10px 0}
+.nav{width:calc(100% - 28px);max-width:520px;bottom:calc(12px + env(safe-area-inset-bottom));padding:5px;border:1px solid var(--line);border-radius:23px;box-shadow:0 10px 35px #00000030;z-index:30}.navbtn{border:0;border-radius:17px;margin:0;padding:10px 0;font-size:10px;min-height:58px}.navbtn--on{background:var(--surface2)}.navbtn svg{width:20px;height:20px;margin-bottom:4px}.restbar{max-width:520px;width:calc(100% - 28px);bottom:calc(90px + env(safe-area-inset-bottom));border-radius:16px;z-index:31}
+.acc{border-radius:18px;border-color:var(--hair)}.acc-head{width:100%;border:0;background:none;color:var(--text);font-family:inherit;text-align:left;min-height:60px;font-size:14px;padding:18px}.acc-head .ar{font-size:10px}.ex-name{font-size:17px;letter-spacing:-.3px}.ex-target{font-size:11px}.setrow .check{height:44px;border-radius:12px}.progress{height:5px;border-radius:5px}.histitem,.editday,.pritem{border-radius:14px}.pick-add,.iconbtn{min-width:40px;min-height:40px;border-radius:12px}.pick-item{padding:14px 0}.foodentry{padding:12px 0}.foodentry .fn{font-size:13px}.del{min-height:40px}.exmodal-card{border-radius:26px 26px 0 0;padding:24px;max-width:560px}.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(98px + env(safe-area-inset-bottom));z-index:250;max-width:calc(100% - 36px);width:max-content;padding:12px 18px;border-radius:14px;background:var(--inv-bg);color:var(--inv-fg);font-size:13px;box-shadow:0 8px 24px #0003}.toast:empty{display:none}.draft-note{font-size:11px;color:var(--muted);margin:12px 0 0}
+@keyframes enter{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}.main.view-enter{animation:enter .22s ease-out}
+@media(min-width:850px){.app{border-left:1px solid var(--hair);border-right:1px solid var(--hair)}.main{padding:24px 28px}.hd{padding-left:32px;padding-right:32px}}
+@media(max-width:360px){.main{padding:14px 12px}.hd{padding-left:16px;padding-right:16px}.card{padding:16px}.page-heading h1{font-size:31px}.dayitem{grid-template-columns:38px 42px minmax(0,1fr) 30px}.ovr{gap:10px}.ringwrap{width:125px}.form-pair{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.main.view-enter{animation:none}*{scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
 <div class="app">
-  <header class="hd"><span class="wordmark">Hermes</span><span class="tagline">Training &amp; Ernährung</span></header>
+  <header class="hd"><div class="brand"><span class="brand-mark" aria-hidden="true">H</span><span class="wordmark">hermes</span></div><span class="edition">Dein Rhythmus.</span></header>
   <main class="main" id="main"></main>
   <div class="restbar" id="restbar"></div>
-  <nav class="nav" id="nav"></nav>
+  <nav class="nav" id="nav" aria-label="Hauptnavigation"></nav>
 </div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="scan" id="scanoverlay">
   <div class="scanbox"><video id="scanvideo" playsinline muted></video><div class="scan-frame"></div></div>
   <div class="scan-status" id="scanStatus">Barcode ruhig vor die Kamera halten …</div>
@@ -683,7 +713,7 @@ function generatePlan(focus,days){
 
 const K={plan:"hermes:plan",settings:"hermes:settings",profile:"hermes:profile",weight:"hermes:bw",history:"hermes:hist",last:"hermes:last",nextDay:"hermes:next",shifts:"hermes:shifts",food:"hermes:food",water:"hermes:water",custom:"hermes:custom",pr:"hermes:pr",rota:"hermes:rota",acts:"hermes:acts",dayPlans:"hermes:dayplans"};
 function load(k,fb){try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch{return fb;}}
-function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.error(e);}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){console.error(e);const el=document.getElementById('toast');if(el)el.textContent='Speichern nicht möglich. Bitte Speicherplatz prüfen und deine Daten sichern.';return false;}}
 /* Datums-Schlüssel in LOKALER Zeit (nicht UTC) — wichtig für Nachtschicht:
    um 0:30 deutscher Zeit muss "heute" der richtige Kalendertag sein. */
 const dateKey=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
@@ -758,7 +788,9 @@ function render(){
  const sig=[state.tab,state.trainView,state.libFor?"lib":"",state.foodPicker?"fp":"",state.actAdding?"act":"",state.saved?"done":""].join("|");
  const y=window.scrollY;
  const v={heute:viewHeute,training:viewTraining,essen:viewEssen,gewicht:viewGewicht,mehr:viewMehr}[state.tab];
- main.innerHTML=v();renderNav();wire();
+ persistWorkout();
+ main.innerHTML=pageHeading()+v();renderNav();wire();wireUpgrade();
+ main.classList.toggle('view-enter',sig!==lastViewSig);
  if(sig===lastViewSig)window.scrollTo(0,y);else window.scrollTo(0,0);
  lastViewSig=sig;
 }
@@ -771,7 +803,7 @@ const NAVICONS={
 };
 function renderNav(){
  const t=[["heute","Heute"],["training","Training"],["essen","Essen"],["gewicht","Gewicht"],["mehr","Mehr"]];
- navEl.innerHTML=t.map(([id,l])=>`<button class="navbtn${state.tab===id?' navbtn--on':''}" data-tab="${id}">${NAVICONS[id]}${l}</button>`).join("");
+ navEl.innerHTML=t.map(([id,l])=>`<button class="navbtn${state.tab===id?' navbtn--on':''}" ${state.tab===id?'aria-current="page"':''} data-tab="${id}">${NAVICONS[id]}${l}</button>`).join("");
 }
 function kcalRing(cons,tgt){
  const R=54,C=2*Math.PI*R,pct=Math.min(1,tgt?cons/tgt:0),off=C*(1-pct),left=Math.round(tgt-cons);
@@ -786,7 +818,7 @@ function bar(label,cons,tgt,unit,over){
 /* ---------- Automatischer Tagesplan ----------
    Jeder Kalendertag wird beim ersten Öffnen einmal aus der effektiven Schicht erzeugt.
    Danach bleibt er stabil, damit manuelle Änderungen nicht überschrieben werden. */
-function dayPlanTemplate(shift){
+function dayPlanTemplate(shift,day=todayKey()){
  const next=dayById(state.nextDayId),train=next?next.label:"Training";
  const templates={
   frueh:[["05:00","Aufstehen & Wasser"],["05:30","Frühstück"],["06:00","Frühschicht"],["15:30",train+" – Training"],["17:30","Hauptmahlzeit"],["21:30","Schlaf vorbereiten"]],
@@ -795,21 +827,28 @@ function dayPlanTemplate(shift){
   frei:[["08:00","Aufstehen & Wasser"],["08:30","Frühstück"],["10:00",train+" – Training"],["13:00","Hauptmahlzeit"],["18:00","Tagesvorbereitung"],["23:00","Schlafen"]],
   none:[["08:00","Aufstehen & Wasser"],["08:30","Frühstück"],["12:30","Hauptmahlzeit"],["18:00","Bewegung"],["22:30","Schlaf vorbereiten"]],
  };
- return (templates[shift||"none"]||templates.none).map(([time,text])=>({id:uid(),time,text,done:false}));
+ let entries=templates[shift||"none"]||templates.none;
+ if(isRestAfterNight(day))entries=[["07:30","Schlafen & erholen"],["15:00","In Ruhe aufstehen"],["15:30","Erste Mahlzeit"],["17:00","Zeit für dich"],["19:00","Hauptmahlzeit"],["22:30","Schlaf vorbereiten"]];
+ const trainedYesterday=state.history.some(h=>dateKey(new Date(h.date))===dateKey(new Date(new Date(day+'T12:00:00').setDate(new Date(day+'T12:00:00').getDate()-1))));
+ return entries.map(([time,text])=>({id:uid(),time,text:trainedYesterday&&text.includes(' – Training')?'Erholung / freie Zeit':text,done:false,dayOffset:shift==='nacht'&&time==='07:30'?1:0}));
 }
 function saveDayPlans(){save(K.dayPlans,state.dayPlans);}
 function ensureDayPlan(day){
+ const old=state.dayPlans[day];
+ if(old&&old.shift==='nacht'&&old.items.some(x=>x.dayOffset===undefined)){old.items=old.items.map(x=>({...x,dayOffset:x.dayOffset===undefined&&x.time==='07:30'&&x.text==='Schlafen'?1:(x.dayOffset||0)}));saveDayPlans();}
+ if(old&&!old.customized&&old.shift!==(effShift(day)||null))delete state.dayPlans[day];
  if(!state.dayPlans[day]){
-  state.dayPlans={...state.dayPlans,[day]:{shift:effShift(day)||null,customized:false,items:dayPlanTemplate(effShift(day))}};
+  state.dayPlans={...state.dayPlans,[day]:{shift:effShift(day)||null,customized:false,items:dayPlanTemplate(effShift(day),day)}};
   saveDayPlans();
  }
  return state.dayPlans[day];
 }
-function updateDayPlan(day,plan){state.dayPlans={...state.dayPlans,[day]:plan};saveDayPlans();}
+function updateDayPlan(day,plan){dayUndo={day,plan:JSON.parse(JSON.stringify(state.dayPlans[day]))};state.dayPlans={...state.dayPlans,[day]:plan};saveDayPlans();}
 function timeValue(t){const m=String(t||"").match(/^(\d{1,2}):(\d{2})$/);return m?(+m[1])*60+(+m[2]):9999;}
-function sortDayItems(items){return items.sort((a,b)=>timeValue(a.time)-timeValue(b.time));}
+function sortDayItems(items){return items.sort((a,b)=>(a.dayOffset||0)*1440+timeValue(a.time)-(b.dayOffset||0)*1440-timeValue(b.time));}
 function extractTime(txt){
- const m=txt.match(/\b([01]?\d|2[0-3])(?:[:.]([0-5]\d))?\s*(?:uhr)?\b/i);
+ if(/\b\d{1,2}[:.]\d{2}\b/.test(txt)&&!/\b(?:[01]?\d|2[0-3])[:.][0-5]\d\b/.test(txt))return null;
+ const m=txt.match(/\b([01]?\d|2[0-3])(?:[:.]([0-5]\d)\s*(?:uhr)?|\s*uhr\b)/i)||txt.match(/(?<=\b(?:um|auf)\s)([01]?\d|2[0-3])(?![\d:.])/i);
  if(!m)return null;
  return {value:String(+m[1]).padStart(2,"0")+":"+(m[2]||"00"),raw:m[0],index:m.index};
 }
@@ -817,13 +856,16 @@ function cleanDaySubject(txt){
  return txt.replace(/\b(heute|bitte|den|die|das|meinen|mein|termin|punkt)\b/gi," ").replace(/\b(hinzufügen|hinzu|eintragen|einplanen|plane|planen|füge|verschieben|verschiebe|verlegen|löschen|lösche|entfernen|entferne|streichen|streiche|absagen|fällt\s+aus|erledigt|abhaken|markieren)\b/gi," ").replace(/\b(auf|um)\s*$/i," ").replace(/\s+/g," ").replace(/^[,.:;\-\s]+|[,.:;\-\s]+$/g,"").trim();
 }
 function findDayItem(items,subject){
- const q=subject.toLowerCase(),words=q.split(/\s+/).filter(w=>w.length>2);
- return items.find(x=>x.text.toLowerCase().includes(q))||items.find(x=>words.some(w=>x.text.toLowerCase().includes(w)));
+ const q=subject.toLowerCase().trim();if(!q)return null;
+ const exact=items.filter(x=>x.text.toLowerCase()===q);if(exact.length===1)return exact[0];
+ const matches=items.filter(x=>x.text.toLowerCase().includes(q));return matches.length===1?matches[0]:null;
 }
 function applyDayCommand(raw){
  const day=todayKey(),plan=ensureDayPlan(day),text=String(raw||"").trim();
  if(!text){state.dayPlanMsg="Sag oder schreib zuerst, was sich ändert.";return false;}
  const lower=text.toLowerCase(),tm=extractTime(text);let subject=cleanDaySubject(tm?text.replace(tm.raw,""):text);
+ if(/\b(morgen|übermorgen|gestern)\b/.test(lower)){state.dayPlanMsg='Bitte bearbeite hier nur heute. Für morgen um 07:30: nutze „+ Termin“ und wähle „Folgetag“.';return false;}
+ if(/\d/.test(text)&&!tm){state.dayPlanMsg='Bitte gib eine gültige Uhrzeit an, zum Beispiel 18:30 Uhr.';return false;}
  const remove=/löschen|lösche|entfern|streich|absagen|fällt\s+aus/.test(lower);
  const done=/erledigt|abhaken|markieren/.test(lower);
  const move=/verschieb|verleg|\bauf\b/.test(lower);
@@ -838,7 +880,7 @@ function applyDayCommand(raw){
  }else if((move||(!add&&hit))&&tm){
   if(!hit){state.dayPlanMsg="Ich finde „"+(subject||"diesen Punkt")+"“ nicht im Tagesplan.";return false;}
   items=items.map(x=>x.id===hit.id?{...x,time:tm.value}:x);sortDayItems(items);state.dayPlanMsg="„"+hit.text+"“ ist jetzt um "+tm.value+" Uhr.";
- }else if(tm&&subject){
+ }else if(tm&&subject&&(add||!plan.items.some(x=>x.text.toLowerCase().includes(subject.toLowerCase())))){
   items.push({id:uid(),time:tm.value,text:subject.charAt(0).toUpperCase()+subject.slice(1),done:false});sortDayItems(items);state.dayPlanMsg="„"+subject+"“ wurde um "+tm.value+" Uhr eingeplant.";
  }else{
   state.dayPlanMsg="Das habe ich nicht verstanden. Beispiel: „Training auf 18 Uhr verschieben“ oder „Arzt um 10:30 hinzufügen“.";return false;
@@ -850,33 +892,78 @@ function startDaySpeech(){
  if(!SR){state.dayPlanMsg="Spracheingabe wird von diesem Browser nicht unterstützt. Du kannst den Satz eintippen.";render();return;}
  const r=new SR();r.lang="de-DE";r.interimResults=false;r.maxAlternatives=1;
  state.dayPlanMsg="Ich höre zu …";const msg=document.getElementById("dayPlanMsg");if(msg)msg.textContent=state.dayPlanMsg;
- r.onresult=e=>{const said=e.results[0][0].transcript;const inp=document.getElementById("dayPlanCommand");if(inp)inp.value=said;applyDayCommand(said);render();};
+ r.onresult=e=>{const said=e.results[0][0].transcript;const inp=document.getElementById("dayPlanCommand");if(inp){inp.value=said;inp.focus();}state.dayPlanMsg='Erkannt. Prüfe den Text und tippe auf „Änderung übernehmen“.';const msg=document.getElementById('dayPlanMsg');if(msg)msg.textContent=state.dayPlanMsg;};
+ r.onend=()=>{if(state.dayPlanMsg==='Ich höre zu …'){state.dayPlanMsg='Keine Sprache erkannt. Versuch es noch einmal.';const msg=document.getElementById('dayPlanMsg');if(msg)msg.textContent=state.dayPlanMsg;}};
  r.onerror=()=>{state.dayPlanMsg="Ich konnte dich nicht verstehen. Versuch es erneut oder tippe den Satz ein.";render();};
  try{r.start();}catch{state.dayPlanMsg="Spracheingabe konnte nicht gestartet werden.";render();}
 }
 function dayPlanCard(){
- const day=todayKey(),plan=ensureDayPlan(day),items=plan.items;
- const rows=items.length?items.map(x=>`<div class="dayitem${x.done?' dayitem--done':''}"><button class="daycheck${x.done?' daycheck--on':''}" data-daydone="${x.id}" aria-label="${x.done?'Als offen markieren':'Erledigt'}">✓</button><span class="daytime">${esc(x.time)}</span><span class="daytext">${esc(x.text)}</span><button class="del" data-daydel="${x.id}" aria-label="Löschen">×</button></div>`).join(""):`<p class="muted sm">Für heute sind keine Punkte mehr geplant.</p>`;
- return `<section class="card"><div class="between" style="margin-bottom:8px"><div><div class="eyebrow" style="margin:0">Mein Tagesplan</div><div class="muted sm">Automatisch für ${plan.shift&&SHIFTS[plan.shift]?SHIFTS[plan.shift].label:"deinen Tag"}</div></div><button class="btn btn-ghost btn-sm" style="width:auto;padding:7px 10px" data-dayreset="1">Neu</button></div><div class="dayplan">${rows}</div><div class="daycmd"><input class="searchbar" id="dayPlanCommand" placeholder="z. B. Training auf 18 Uhr verschieben"><button class="micbtn" data-dayspeak="1" aria-label="Änderung sprechen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6"/></svg></button></div><button class="btn btn-sm" style="margin-top:7px" data-dayapply="1">Änderung übernehmen</button><div class="daymsg" id="dayPlanMsg">${esc(state.dayPlanMsg||"Du kannst Änderungen eintippen oder sprechen.")}</div></section>`;
+ const day=todayKey(),plan=ensureDayPlan(day),items=sortDayItems([...plan.items]),done=items.filter(x=>x.done).length;
+ const next=items.find(x=>!x.done),changed=plan.shift!==effShift(day);
+ const rows=items.map(x=>`<div class="dayitem${x.done?' dayitem--done':''}${next===x?' dayitem--next':''}"><button class="daycheck${x.done?' daycheck--on':''}" data-daydone="${esc(x.id)}" aria-pressed="${!!x.done}" aria-label="${esc(x.text)} ${x.done?'wieder öffnen':'abhaken'}">✓</button><span class="daytime">${esc(x.time)}${x.dayOffset?'<small>+1 Tag</small>':''}</span><button class="daytext" data-taskedit="${esc(x.id)}" aria-label="${esc(x.text)} bearbeiten">${esc(x.text)}</button><button class="del" data-taskdelete="${esc(x.id)}" aria-label="${esc(x.text)} löschen">×</button></div>`).join('');
+ const edit=taskEditor===null?'':taskEditorForm(items.find(x=>x.id===taskEditor));
+ return `<section class="card"><div class="section-top"><div><h2>Dein Tagesplan</h2><p>${done} von ${items.length} erledigt · ${plan.customized?'Individuell angepasst':'Deine Tagesvorlage'}</p></div><button class="textbtn" data-taskadd>+ Termin</button></div><div class="day-progress" role="progressbar" aria-label="Tagesfortschritt" aria-valuenow="${done}" aria-valuemin="0" aria-valuemax="${items.length||1}"><span style="width:${items.length?done/items.length*100:0}%"></span></div>${changed?'<p class="muted sm">Deine Schicht hat sich geändert. Persönliche Termine bleiben erhalten; unter „Tagesplan anpassen“ kannst du die neue Vorlage laden.</p>':''}<div class="dayplan">${rows||'<p class="muted sm">Platz für deinen Tag. Füge einen Termin hinzu.</p>'}</div>${done===items.length&&items.length?'<p class="muted sm">Alles erledigt. Zeit zum Durchatmen.</p>':''}${edit}${dayUndo&&dayUndo.day===day?'<button class="undo-button" data-taskundo>Letzte Änderung rückgängig</button>':''}<details class="planner-help" ${state.dayPlanMsg?'open':''}><summary>Tagesplan anpassen</summary><p>Tippe einen Punkt zum Bearbeiten an oder nutze einen kurzen Befehl.</p><div class="daycmd"><input class="searchbar" id="dayPlanCommand" aria-label="Änderung am Tagesplan" placeholder="Training auf 18 Uhr verschieben"><button class="micbtn" data-dayspeak="1" aria-label="Änderung sprechen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6"/></svg></button></div><div class="command-examples"><button data-example="Training auf 18 Uhr verschieben">Training verschieben</button><button data-example="Einkaufen um 17 Uhr hinzufügen">Termin hinzufügen</button></div><button class="btn btn-sm" style="margin-top:12px" data-dayapply="1">Änderung übernehmen</button><div class="daymsg" id="dayPlanMsg" role="status">${esc(state.dayPlanMsg||'Kurze Befehle werden direkt auf deinem Gerät verarbeitet.')}</div><p>Beim Sprechen kann dein Browser einen Onlinedienst verwenden. Der erkannte Text wird erst nach deiner Bestätigung übernommen.</p><button class="textbtn" data-dayreset="1">Tagesvorlage neu laden</button></details></section>`;
 }
+
+/* Small improvements shared across screens. No new runtime dependencies. */
+let dayUndo=null,taskEditor=null,toastTimer=null,activeDate=todayKey();
+K.draft='hermes:draft';
+function notifyUser(message){const el=document.getElementById('toast');el.textContent=message;clearTimeout(toastTimer);toastTimer=setTimeout(()=>{el.textContent='';},3200);}
+function pageHeading(){
+ const titles={heute:['Dein Tag. Dein Tempo.','Training, Essen und Alltag in deinem Rhythmus.'],training:['Stärker. Schritt für Schritt.','Deine nächste Wiederholung zählt.'],essen:['Gut versorgt.','Mahlzeiten, Wasser und dein Überblick.'],gewicht:['Dein Fortschritt.','Einzelne Werte schwanken. Der Verlauf zählt.'],mehr:['So passt es zu dir.','Deine Ziele, dein Rhythmus, deine Daten.']};
+ const [title,sub]=titles[state.tab];
+ const date=new Date().toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'});
+ return `<div class="page-heading"><div class="date-line"><span>${esc(date)}</span><span class="status-pill">${navigator.onLine?'Hermes 2':'Offline'}</span></div><h1>${title}</h1><p>${sub}</p></div>`;
+}
+function taskEditorForm(item){return `<form id="taskForm" class="inline-form"><label>Was steht an?<input id="taskTitle" class="inp" style="text-align:left" required maxlength="100" value="${esc(item?.text||'')}" placeholder="Zum Beispiel: Einkaufen"></label><div class="form-pair"><label>Uhrzeit<input id="taskTime" class="inp" type="time" required value="${esc(item?.time||'17:00')}"></label><label>Tag<select id="taskOffset" class="sel"><option value="0">Heute</option><option value="1" ${item?.dayOffset?'selected':''}>Folgetag (nach Mitternacht)</option></select></label></div><div class="form-actions"><button type="button" class="btn btn-ghost btn-sm" data-taskcancel>Abbrechen</button><button class="btn btn-sm" type="submit">Speichern</button></div></form>`;}
+function wireUpgrade(){
+ const search=document.getElementById('foodSearch');
+ if(search){
+  let mode='all',expanded=false;
+  const filter=()=>{const normalize=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');const q=normalize(search.value.trim());const matches=[...main.querySelectorAll('.food-item')].filter(el=>normalize(el.dataset.name).includes(q)&&(mode==='all'||el.dataset.foodrecent==='1'));main.querySelectorAll('.food-item').forEach(el=>el.style.display='none');matches.slice(0,expanded?matches.length:12).forEach(el=>el.style.display='');document.getElementById('foodResultCount').textContent=matches.length?(Math.min(matches.length,expanded?matches.length:12)+' von '+matches.length+' Lebensmitteln'):(mode==='recent'&&!q?'Noch keine Lebensmittel aus deiner Liste verwendet.':'Keine Treffer. Versuche einen anderen Begriff oder lege unten ein eigenes Lebensmittel an.');document.getElementById('foodShowAll').hidden=expanded||matches.length<=12;};
+  search.oninput=()=>{expanded=false;filter();};main.querySelectorAll('[data-foodfilter]').forEach(b=>b.onclick=()=>{mode=b.dataset.foodfilter;expanded=false;main.querySelectorAll('[data-foodfilter]').forEach(x=>x.classList.toggle('chip--on',x===b));filter();});document.getElementById('foodShowAll').onclick=()=>{expanded=true;filter();};filter();
+ }
+ main.querySelectorAll('[data-taskedit]').forEach(b=>b.onclick=()=>{taskEditor=b.dataset.taskedit;render();document.getElementById('taskTitle').focus();});
+ const add=main.querySelector('[data-taskadd]');if(add)add.onclick=()=>{taskEditor='new';render();document.getElementById('taskTitle').focus();};
+ const cancel=main.querySelector('[data-taskcancel]');if(cancel)cancel.onclick=()=>{taskEditor=null;render();};
+ main.querySelectorAll('[data-taskdelete]').forEach(b=>b.onclick=()=>{const p=ensureDayPlan(todayKey());updateDayPlan(todayKey(),{...p,customized:true,items:p.items.filter(x=>x.id!==b.dataset.taskdelete)});render();notifyUser('Termin entfernt. Du kannst ihn rückgängig machen.');});
+ const undo=main.querySelector('[data-taskundo]');if(undo)undo.onclick=()=>{state.dayPlans[dayUndo.day]=dayUndo.plan;dayUndo=null;saveDayPlans();taskEditor=null;state.dayPlanMsg='';render();notifyUser('Änderung rückgängig gemacht.');};
+ const form=document.getElementById('taskForm');if(form)form.onsubmit=e=>{e.preventDefault();const text=document.getElementById('taskTitle').value.trim(),time=document.getElementById('taskTime').value,dayOffset=+document.getElementById('taskOffset').value;if(!text||!/^([01]\d|2[0-3]):[0-5]\d$/.test(time))return;const p=ensureDayPlan(todayKey()),existing=p.items.find(x=>x.id===taskEditor),entry={...(existing||{id:uid(),done:false}),text,time,dayOffset};const items=existing?p.items.map(x=>x.id===taskEditor?entry:x):[...p.items,entry];updateDayPlan(todayKey(),{...p,customized:true,items:sortDayItems(items)});taskEditor=null;render();notifyUser('Tagesplan aktualisiert.');};
+ main.querySelectorAll('[data-example]').forEach(b=>b.onclick=()=>{const inp=document.getElementById('dayPlanCommand');inp.value=b.dataset.example;inp.focus();});
+ main.querySelectorAll('[data-quickmeal]').forEach(b=>b.onclick=()=>{state.tab='essen';state.foodPicker=true;state.mealFor=new Date().getHours()<11?'fruehstueck':new Date().getHours()<16?'mittag':'abend';render();});
+ main.querySelectorAll('input[data-f],#noteInp').forEach(el=>el.addEventListener('input',persistWorkout));
+ main.querySelectorAll('[data-check]').forEach(el=>el.addEventListener('click',persistWorkout));
+ main.querySelectorAll('input[data-f]').forEach(el=>{el.min='0';el.setAttribute('aria-label',(el.dataset.f==='weight'?'Gewicht':'Wiederholungen')+' Satz '+(+el.dataset.si+1));});
+ main.querySelectorAll('[data-check]').forEach(el=>{el.setAttribute('aria-label','Satz abschließen');el.setAttribute('aria-pressed',el.classList.contains('check--on'));});
+}
+function persistWorkout(){
+ if(!state.log||state.saved)return;
+ const hasData=state.note||state.log.some(e=>e.sets.some(s=>s.done||s.weight||s.reps));
+ if(hasData)save(K.draft,{dayId:state.trainDayId,log:state.log,note:state.note,date:todayKey()});
+ else localStorage.removeItem(K.draft);
+}
+function restoreWorkout(){
+ const d=load(K.draft,null);if(!d||!state.plan.some(x=>x.id===d.dayId)||!Array.isArray(d.log)||!d.log.every(e=>Array.isArray(e.sets)))return;
+ state.trainDayId=d.dayId;state.log=d.log;state.note=typeof d.note==='string'?d.note:'';
+}
+function waterCard(tg,con){const goal=tg?.water||0,count=goal?Math.min(8,Math.floor(con.water/goal*8)):0;return `<section class="card water-card"><div><div class="eyebrow">Wasser heute</div><strong>${(con.water/1000).toLocaleString('de-DE',{maximumFractionDigits:2})} <small>/ ${goal?(goal/1000).toLocaleString('de-DE',{maximumFractionDigits:1})+' l':'— l'}</small></strong><div class="water-dots" aria-hidden="true">${Array.from({length:8},(_,i)=>`<i class="${i<count?'filled':''}"></i>`).join('')}</div></div><button class="btn btn-ghost btn-sm" style="width:auto" data-water="250">+ 250 ml</button></section>`;}
 
 /* ---- Heute ---- */
 function ovrCard(tg,con){
- if(!tg)return `<section class="card"><div class="between" style="margin-bottom:10px"><div class="eyebrow" style="margin:0">Heute</div><button class="btn-ghost btn btn-sm" style="width:auto;padding:7px 12px" data-go="essen">Essen öffnen</button></div><p class="muted">Trag dein Gewicht ein (Tab „Gewicht") — dann berechnet Hermes deinen Tagesbedarf und zeigt dir den Ring.</p><button class="btn btn-ghost btn-sm" data-actadd="1" style="margin-top:10px">+ Aktivität</button></section>`;
+ if(!tg)return `<section class="card"><div class="section-top"><div><h2>Dein erster Schritt</h2><p>Einmal einrichten, jeden Tag im Blick.</p></div></div><p class="muted sm">Mit deinem Gewicht und Profil wird aus Hermes dein persönlicher Überblick für Ernährung und Fortschritt.</p><div class="form-actions"><button class="btn btn-sm" data-go="gewicht">Gewicht eintragen</button><button class="btn btn-ghost btn-sm" data-go="mehr">Profil anpassen</button></div></section>`;
  const eaten=Math.round(con.kcal),burned=Math.round(burnedToday());
- return `<section class="card">
+ return `<section class="card"><div class="section-top"><div><h2>Deine Energie</h2><p>Ernährung im Überblick</p></div><button class="textbtn" data-go="essen">Details ↗</button></div>
   <div class="ovr">
    <div class="ovr-ring">${kcalRing(con.kcal,tg.kcal)}</div>
    <div class="ovr-side">
     <div class="ovr-line"><span class="l">Gegessen</span><span class="v">${eaten} kcal</span></div>
-    <div class="ovr-line"><span class="l">Verbraucht</span><span class="v">${burned} kcal</span></div>
+    <div class="ovr-line"><span class="l">Aktivität (geschätzt)</span><span class="v">${burned} kcal</span></div>
     <div class="minirow" style="gap:8px;margin-top:2px">
      <button class="btn btn-ghost btn-sm" data-actadd="1" style="flex:1">+ Aktivität</button>
-     <button class="btn btn-ghost btn-sm" data-go="essen" style="flex:1">Essen</button>
     </div>
    </div>
   </div>
- </section>`;
+ <div class="mini-macros">${[['Protein',con.p,tg.p],['Kohlenhydrate',con.c,tg.c],['Fett',con.f,tg.f]].map(([name,value,target])=>`<div><b>${Math.round(value)}<small style="font-size:10px;color:var(--muted)"> / ${target} g</small></b><span>${name}</span></div>`).join('')}</div></section>`;
 }
 function viewActivityPicker(){
  const kg=latestKg()||75;
@@ -917,13 +1004,15 @@ function viewHeute(){
   const when=restNight?"Erholung geht heute vor.":s.when;
   const note=restNight?"Erster freier Tag nach dem Nacht-Block — der gehört dem Schlaf.":s.note;
   const body=restNight?`<div class="hero-rest">Heute kein Training. Schlaf nach, iss gut und tank auf — morgen greifst du wieder voll an.</div>`:(s.train?`<button class="btn" data-go="training">${esc(nd.label)} starten</button>`:`<div class="hero-rest">Heute leicht halten.</div>`);
-  hero=`<section class="card hero"><div class="hero-tag">${s.label}schicht</div><div class="hero-when">${when}</div><p class="hero-note">${note}</p>${body}</section>`;}
+  hero=`<section class="card hero"><div class="eyebrow">Dein Fokus heute · ${s.label}${ts==='frei'?'':'schicht'}</div><div class="hero-tag">${restNight?'Raum für Erholung.':s.train?'Zeit für dich.':'In deinem Tempo.'}</div><div class="hero-when">${when}</div><p class="hero-note">${note}</p>${body}</section>`;}
  else hero=`<section class="card hero hero--empty">Wähl unten deine Schicht — dann zeigt dir Hermes, wann und wie der Tag am besten läuft.</section>`;
  return `<div class="stack">
-  ${ovrCard(tg,con)}
   ${hero}
+  <div class="quick-actions"><button data-quickmeal>${NAVICONS.essen}Essen eintragen</button><button data-go="training">${NAVICONS.training}Training öffnen</button><button data-actadd="1">${NAVICONS.heute}Aktivität erfassen</button></div>
+  ${ovrCard(tg,con)}
+  ${waterCard(tg,con)}
   ${dayPlanCard()}
-  <div class="grid2" style="grid-template-columns:repeat(3,1fr)">
+  <div class="summary-grid">
    <section class="card stat"><div class="stat-num" style="font-size:26px">${sess}</div><div class="stat-lbl">Einheiten /<br>7 Tage</div></section>
    <section class="card stat"><div class="stat-num" style="font-size:26px">${kg??"—"}${kg?'<span class="u">kg</span>':''}</div><div class="stat-lbl">aktuelles<br>Gewicht</div></section>
    <section class="card stat"><div class="stat-num" style="font-size:26px">${foodStreak()}</div><div class="stat-lbl">Tage Essen<br>getrackt</div></section>
@@ -963,7 +1052,7 @@ function viewTraining(){
   ${nav}
   <section class="card"><div class="dayswitch">${days}</div><div class="progress"><div class="progress-bar" id="progBar" style="width:${total?done/total*100:0}%"></div></div><div class="muted sm" id="progTxt">${done} / ${total} Sätze erledigt</div></section>
   ${exHtml}
-  <section class="card"><div class="eyebrow">Notiz</div><textarea class="notearea" id="noteInp" placeholder="Wie lief's? Energie, Schmerzen, Fortschritt …">${esc(state.note)}</textarea></section>
+  <section class="card"><div class="eyebrow">Notiz</div><textarea class="notearea" id="noteInp" placeholder="Wie lief's? Energie, Fortschritt …">${esc(state.note)}</textarea><p class="draft-note">Deine laufende Einheit wird auf diesem Gerät automatisch zwischengespeichert.</p></section>
   <button class="btn" id="saveBtn" ${done===0?'disabled':''} data-save="1">Einheit speichern</button>
   <p class="tip">Beim Wiedereinstieg: die ersten Wochen 2–3 Wdh. „im Tank" lassen.</p>
  </div>`;
@@ -1043,6 +1132,7 @@ function checkPRs(){
  state.prs=prs;save(K.pr,prs);state.lastPRs=newPRs;
 }
 function finish(){
+ if(state.saved||counts().done===0)return;
  const date=new Date().toISOString(),d=dayById(state.trainDayId);
  state.history=[...state.history,{date,dayLabel:d.label,note:state.note,exercises:state.log}];save(K.history,state.history);
  const nb={...state.lastBest};
@@ -1050,14 +1140,14 @@ function finish(){
  state.lastBest=nb;save(K.last,nb);
  checkPRs();
  const order=state.plan.map(x=>x.id),i=order.indexOf(state.trainDayId);state.nextDayId=order[(i+1)%order.length];save(K.nextDay,state.nextDayId);
- state.note="";state.saved=true;stopRest();buzz([20,60,20]);render();
+ state.note="";state.saved=true;localStorage.removeItem(K.draft);stopRest();buzz([20,60,20]);render();
 }
-function switchDay(id){state.trainDayId=id;state.log=buildLog(id);state.saved=false;render();}
+function switchDay(id){if(id===state.trainDayId&&!state.saved)return;if(!state.saved&&(state.note||state.log.some(e=>e.sets.some(s=>s.done||s.weight||s.reps)))&&!confirm('Laufende Einheit verwerfen und einen anderen Trainingstag öffnen?'))return;state.trainDayId=id;state.log=buildLog(id);state.note='';state.saved=false;localStorage.removeItem(K.draft);stopRest();render();}
 
 /* Rest timer */
-function startRest(){stopRest();state.rest.left=state.settings.rest||0;if(state.rest.left<=0)return;state.rest.active=true;drawRest();state.rest.timer=setInterval(()=>{state.rest.left--;if(state.rest.left<=0)stopRest();else drawRest();},1000);}
+function startRest(){stopRest();state.rest.left=state.settings.rest||0;if(state.rest.left<=0)return;state.rest.until=Date.now()+state.rest.left*1000;state.rest.active=true;drawRest();state.rest.timer=setInterval(()=>{state.rest.left=Math.max(0,Math.ceil((state.rest.until-Date.now())/1000));if(state.rest.left<=0){stopRest();notifyUser('Pause vorbei. Bereit für den nächsten Satz.');buzz([20,60,20]);}else drawRest();},500);}
 function stopRest(){if(state.rest.timer)clearInterval(state.rest.timer);state.rest.timer=null;state.rest.active=false;drawRest();}
-function drawRest(){const el=document.getElementById("restbar");if(!state.rest.active){el.className="restbar";el.innerHTML="";return;}const m=Math.floor(state.rest.left/60),s=state.rest.left%60;el.className="restbar on";el.innerHTML=`<span class="rt">${m>0?m+":":""}${s<10&&m>0?"0":""}${s}</span><span class="rl">Pause</span><button data-rplus="1">+30s</button><button data-rstop="1">Stop</button>`;el.querySelector("[data-rplus]").onclick=()=>{state.rest.left+=30;drawRest();};el.querySelector("[data-rstop]").onclick=stopRest;}
+function drawRest(){const el=document.getElementById("restbar");if(!state.rest.active){el.className="restbar";el.innerHTML="";return;}const m=Math.floor(state.rest.left/60),s=state.rest.left%60;el.className="restbar on";el.innerHTML=`<span class="rt">${m>0?m+":":""}${s<10&&m>0?"0":""}${s}</span><span class="rl">Pause</span><button data-rplus="1">+30s</button><button data-rstop="1">Stop</button>`;el.querySelector("[data-rplus]").onclick=()=>{state.rest.until+=30000;state.rest.left+=30;drawRest();};el.querySelector("[data-rstop]").onclick=stopRest;}
 
 /* ---- Essen ---- */
 /* Mahlzeiten-Kategorien (Reihenfolge = Anzeige). Alte Einträge ohne meal → „snack". */
@@ -1165,10 +1255,11 @@ function trendChart(pts,target){
 function allFoods(){return [...state.customFoods,...FOODS.map(foodObj)];}
 function viewFoodPicker(){
  const foods=allFoods();
- const items=foods.map((f,i)=>{
+ const recent=new Set(Object.keys(state.foodLog).sort().slice(-14).flatMap(d=>state.foodLog[d].map(e=>e.name)));
+ const items=foods.map((f,i)=>({f,i})).sort((a,b)=>Number(b.i<state.customFoods.length)-Number(a.i<state.customFoods.length)||Number(recent.has(b.f.name))-Number(recent.has(a.f.name))).map(({f,i})=>{
   const pt=PORTIONS[f.name];
   const chips=pt?`<div class="portrow">${pt.map(([l,g])=>`<button class="portchip" data-portadd="${i}|${g}">+ ${esc(l)}</button>`).join("")}</div>`:"";
-  return `<div class="pick-item food-item" data-name="${esc(f.name.toLowerCase())}"><div class="pick-left"><div class="pn" data-foodinfo="${i}">${esc(f.name)} <span class="ex-i">ⓘ</span></div><div class="pmeta">${Math.round(f.n.kcal)} kcal · ${f.n.p}g P · ${f.n.c}g KH · ${f.n.f}g F / 100g</div>${chips}</div><div class="gramrow"><input class="gram-inp" type="number" inputmode="numeric" value="100" data-gram="${i}"><button class="pick-add" data-addfood="${i}">+</button></div></div>`;
+  return `<div class="pick-item food-item" data-name="${esc(f.name.toLowerCase())}" data-foodrecent="${recent.has(f.name)?1:0}"><div class="pick-left"><div class="pn" data-foodinfo="${i}">${esc(f.name)} <span class="ex-i">ⓘ</span></div><div class="pmeta">${Math.round(f.n.kcal)} kcal · ${f.n.p}g P · ${f.n.c}g KH · ${f.n.f}g F / 100g</div>${chips}</div><div class="gramrow"><input class="gram-inp" type="number" min="1" inputmode="decimal" aria-label="${esc(f.name)} Gramm" value="100" data-gram="${i}"><button class="pick-add" aria-label="${esc(f.name)} hinzufügen" data-addfood="${i}">+</button></div></div>`;
  }).join("");
  const banner=state.scanAdded?`<div class="scan-added">✓ „${esc(state.scanAdded)}" angelegt — oben in der Liste, Menge wählen und + tippen.</div>`:"";
  return `<div class="stack">
@@ -1177,8 +1268,11 @@ function viewFoodPicker(){
    <div class="shiftrow" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px">${MEALS.map(([k,l])=>`<button class="chip${state.mealFor===k?' chip--on':''}" data-mealsel="${k}" style="padding:9px 2px;font-size:12px">${l}</button>`).join("")}</div>
    <button class="btn" data-scanopen="1" style="margin-bottom:12px">📷 Barcode scannen</button>
    ${banner}
-   <input class="searchbar" id="foodSearch" placeholder="Lebensmittel suchen …">
+   <input class="searchbar" id="foodSearch" aria-label="Lebensmittel suchen" placeholder="Lebensmittel suchen …">
+   <div class="dayswitch"><button class="chip chip--on" style="flex:1" data-foodfilter="all">Alle</button><button class="chip" style="flex:1" data-foodfilter="recent">Zuletzt verwendet</button></div>
+   <p id="foodResultCount" class="muted sm" role="status"></p>
    <div id="foodList">${items}</div>
+   <button class="btn btn-ghost btn-sm" id="foodShowAll">Alle Treffer anzeigen</button>
   </section>
   <section class="card"><div class="eyebrow">Eigenes Lebensmittel (pro 100 g)</div>
    <div class="field"><label>Name</label><input class="inp" style="text-align:left" id="cfName" placeholder="z. B. Mein Müsli"></div>
@@ -1190,10 +1284,11 @@ function viewFoodPicker(){
  </div>`;
 }
 function addFood(idx,grams,meal){
- const f=allFoods()[idx];if(!f)return;const g=Math.max(1,grams||100);
+ const f=allFoods()[idx];if(!f)return false;if(!Number.isFinite(grams)||grams<=0){notifyUser('Bitte gib eine Menge größer als 0 g ein.');return false;}const g=grams;
  const n={};FKEYS.forEach(k=>n[k]=(f.n[k]||0)*g/100);
  const day=todayKey();const arr=state.foodLog[day]?[...state.foodLog[day]]:[];
  arr.push({name:f.name,grams:g,meal:meal||state.mealFor,n});state.foodLog={...state.foodLog,[day]:arr};save(K.food,state.foodLog);
+ notifyUser(f.name+' hinzugefügt · '+Math.round(g)+' g');buzz(12);return true;
 }
 /* Gesundheits-Begründung aus dem Nährstoffprofil (pro 100 g) — skaliert auf alle
    Lebensmittel inkl. eigener. Grenzwerte grob nach „nennenswerter Menge je 100 g". */
@@ -1287,7 +1382,7 @@ function viewGewicht(){
 function svgChart(bw){
  const W=440,H=200,pad={t:12,r:12,b:24,l:34},xs=W-pad.l-pad.r,ys=H-pad.t-pad.b;
  const kgs=bw.map(b=>b.kg);let min=Math.min(...kgs),max=Math.max(...kgs);if(min===max){min-=1;max+=1;}else{const m=(max-min)*0.15;min-=m;max+=m;}
- const n=bw.length,px=i=>pad.l+(n===1?xs/2:(i/(n-1))*xs),py=v=>pad.t+ys-((v-min)/(max-min))*ys;
+ const n=bw.length,first=Date.parse(bw[0].date),spanMs=Date.parse(bw[n-1].date)-first,px=i=>pad.l+(spanMs===0?xs/2:(Date.parse(bw[i].date)-first)/spanMs*xs),py=v=>pad.t+ys-((v-min)/(max-min))*ys;
  const pts=bw.map((b,i)=>`${px(i).toFixed(1)},${py(b.kg).toFixed(1)}`).join(" ");
  const dots=bw.map((b,i)=>`<circle cx="${px(i).toFixed(1)}" cy="${py(b.kg).toFixed(1)}" r="2.5" fill="var(--text)"/>`).join("");
  const yl=[max,(max+min)/2,min].map(v=>{const y=py(v);return `<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="var(--hair)"/><text class="axis" x="2" y="${y+3}">${v.toFixed(0)}</text>`;}).join("");
@@ -1300,7 +1395,7 @@ function svgChart(bw){
 function addWeight(){const inp=document.getElementById("kgInput");if(!inp)return;const kg=parseFloat(String(inp.value).replace(",","."));if(!kg||kg<=0)return;const date=todayKey();state.bodyweight=[...state.bodyweight.filter(b=>b.date!==date),{date,kg}].sort((a,b)=>a.date.localeCompare(b.date));save(K.weight,state.bodyweight);render();}
 
 /* ---- Mehr (Editor/Einstellungen) ---- */
-function acc(id,title,inner){const open=!!state.acc[id];return `<div class="acc"><div class="acc-head" data-acc="${id}">${title}<span class="ar">${open?'▲':'▼'}</span></div>${open?`<div class="acc-body">${inner}</div>`:''}</div>`;}
+function acc(id,title,inner){const open=!!state.acc[id];return `<div class="acc"><button class="acc-head" data-acc="${id}" aria-expanded="${open}">${title}<span class="ar">${open?'−':'+'}</span></button>${open?`<div class="acc-body">${inner}</div>`:''}</div>`;}
 function viewMehr(){
  return `<div class="stack">
   <p class="muted sm" style="margin:0 2px 2px">Einstellungen. Trainingsplan &amp; Verlauf findest du im Tab „Training", Essen &amp; Wasser unter „Essen".</p>
@@ -1390,13 +1485,12 @@ function wire(){
  navEl.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;state.libFor=null;state.foodPicker=false;if(b.dataset.tab==="training")state.trainView="log";render();});
  main.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{state.tab=b.dataset.go;if(b.dataset.go==="training")state.trainView="log";render();});
  // Heute
- main.querySelectorAll("[data-shift]").forEach(b=>b.onclick=()=>{const day=todayKey(),k=b.dataset.shift,sbd={...state.shiftByDate},oldPlan=state.dayPlans[day];if(sbd[day]===k)delete sbd[day];else sbd[day]=k;state.shiftByDate=sbd;save(K.shifts,sbd);if(oldPlan&&!oldPlan.customized){const dp={...state.dayPlans};delete dp[day];state.dayPlans=dp;saveDayPlans();}else if(oldPlan)updateDayPlan(day,{...oldPlan,shift:effShift(day)||null});state.dayPlanMsg=oldPlan&&oldPlan.customized?"Schicht aktualisiert — deine Änderungen bleiben erhalten.":"Tagesplan an die Schicht angepasst.";render();});
+ main.querySelectorAll("[data-shift]").forEach(b=>b.onclick=()=>{const day=todayKey(),k=b.dataset.shift,sbd={...state.shiftByDate},oldPlan=state.dayPlans[day];if(sbd[day]===k)delete sbd[day];else sbd[day]=k;state.shiftByDate=sbd;save(K.shifts,sbd);if(oldPlan&&!oldPlan.customized){const dp={...state.dayPlans};delete dp[day];state.dayPlans=dp;saveDayPlans();}state.dayPlanMsg='';render();notifyUser(oldPlan&&oldPlan.customized?'Schicht geändert. Dein angepasster Tagesplan bleibt erhalten.':'Tagesplan an die Schicht angepasst.');});
  main.querySelectorAll("[data-daydone]").forEach(b=>b.onclick=()=>{const day=todayKey(),p=ensureDayPlan(day);updateDayPlan(day,{...p,customized:true,items:p.items.map(x=>x.id===b.dataset.daydone?{...x,done:!x.done}:x)});render();});
- main.querySelectorAll("[data-daydel]").forEach(b=>b.onclick=()=>{const day=todayKey(),p=ensureDayPlan(day);updateDayPlan(day,{...p,customized:true,items:p.items.filter(x=>x.id!==b.dataset.daydel)});state.dayPlanMsg="Punkt entfernt.";render();});
  const dpa=main.querySelector("[data-dayapply]");if(dpa)dpa.onclick=()=>{const inp=document.getElementById("dayPlanCommand");if(applyDayCommand(inp&&inp.value))render();else{const msg=document.getElementById("dayPlanMsg");if(msg)msg.textContent=state.dayPlanMsg;}};
  const dpi=document.getElementById("dayPlanCommand");if(dpi)dpi.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();if(applyDayCommand(dpi.value))render();else{const msg=document.getElementById("dayPlanMsg");if(msg)msg.textContent=state.dayPlanMsg;}}};
  const dps=main.querySelector("[data-dayspeak]");if(dps)dps.onclick=startDaySpeech;
- const dpr=main.querySelector("[data-dayreset]");if(dpr)dpr.onclick=()=>{const day=todayKey(),dp={...state.dayPlans};delete dp[day];state.dayPlans=dp;saveDayPlans();state.dayPlanMsg="Tagesplan wurde neu erzeugt.";render();};
+ const dpr=main.querySelector("[data-dayreset]");if(dpr)dpr.onclick=()=>{if(!confirm('Tagesvorlage neu laden? Deine heutigen Anpassungen werden ersetzt. Du kannst das anschließend rückgängig machen.'))return;const day=todayKey();updateDayPlan(day,{shift:effShift(day)||null,customized:false,items:dayPlanTemplate(effShift(day),day)});taskEditor=null;state.dayPlanMsg='Tagesvorlage neu geladen.';render();};
  // Training
  main.querySelectorAll("[data-trainview]").forEach(b=>b.onclick=()=>{state.trainView=b.dataset.trainview;state.libFor=null;render();});
  main.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>switchDay(b.dataset.day));
@@ -1410,7 +1504,7 @@ function wire(){
  const sv=main.querySelector("[data-save]");if(sv)sv.onclick=finish;
  const pr=main.querySelector("[data-prepare]");if(pr)pr.onclick=()=>switchDay(pr.dataset.prepare);
  // Essen
- const aa=main.querySelector("[data-actadd]");if(aa)aa.onclick=()=>{state.actAdding=true;render();};
+ main.querySelectorAll('[data-actadd]').forEach(b=>b.onclick=()=>{state.actAdding=true;render();});
  const ab=main.querySelector("[data-actback]");if(ab)ab.onclick=()=>{state.actAdding=false;render();};
  main.querySelectorAll("[data-actlog]").forEach(b=>b.onclick=()=>{const i=+b.dataset.actlog;const[name,met]=ACTS[i];const mi=main.querySelector(`[data-actmin="${i}"]`);const min=Math.max(1,Math.round(parseFloat(mi?mi.value:30)||0));const kg=latestKg()||75;const kcal=actKcal(met,min,kg);const day=todayKey();const arr=[...(state.activityLog[day]||[]),{name,min,kcal}];state.activityLog={...state.activityLog,[day]:arr};save(K.acts,state.activityLog);render();showReward();});
  main.querySelectorAll("[data-delact]").forEach(b=>b.onclick=()=>{const i=+b.dataset.delact;const day=todayKey();const arr=[...(state.activityLog[day]||[])];arr.splice(i,1);state.activityLog={...state.activityLog,[day]:arr};save(K.acts,state.activityLog);render();});
@@ -1424,8 +1518,8 @@ function wire(){
  const sc=main.querySelector("[data-scanopen]");if(sc)sc.onclick=openScanner;
  main.querySelectorAll("[data-delfood]").forEach(b=>b.onclick=()=>{const i=+b.dataset.delfood;const day=todayKey();const arr=[...(state.foodLog[day]||[])];arr.splice(i,1);state.foodLog={...state.foodLog,[day]:arr};save(K.food,state.foodLog);render();});
  main.querySelectorAll("[data-water]").forEach(b=>b.onclick=()=>{const day=todayKey();const cur=state.waterLog[day]||0;state.waterLog={...state.waterLog,[day]:Math.max(0,cur+ +b.dataset.water)};save(K.water,state.waterLog);buzz(8);render();});
- main.querySelectorAll("[data-addfood]").forEach(b=>b.onclick=()=>{const i=+b.dataset.addfood;const gi=main.querySelector(`[data-gram="${i}"]`);addFood(i,gi?parseFloat(gi.value):100,state.mealFor);showReward();});
- main.querySelectorAll("[data-portadd]").forEach(b=>b.onclick=()=>{const[i,g]=b.dataset.portadd.split("|");addFood(+i,+g,state.mealFor);showReward();});
+ main.querySelectorAll("[data-addfood]").forEach(b=>b.onclick=()=>{const i=+b.dataset.addfood;const gi=main.querySelector(`[data-gram="${i}"]`);addFood(i,gi?parseFloat(gi.value):100,state.mealFor);});
+ main.querySelectorAll("[data-portadd]").forEach(b=>b.onclick=()=>{const[i,g]=b.dataset.portadd.split("|");addFood(+i,+g,state.mealFor);});
  main.querySelectorAll("[data-foodinfo]").forEach(el=>el.onclick=()=>openFoodInfo(+el.dataset.foodinfo));
  const search=document.getElementById("foodSearch");if(search)search.oninput=()=>{const q=search.value.toLowerCase();main.querySelectorAll(".food-item").forEach(it=>{it.style.display=it.dataset.name.includes(q)?"":"none";});};
  const ac=main.querySelector("[data-addcustom]");if(ac)ac.onclick=()=>{const nm=(document.getElementById("cfName").value||"").trim();if(!nm)return;const kcal=+document.getElementById("cfKcal").value||0;const p=+document.getElementById("cfP").value||0;const c=+document.getElementById("cfC").value||0;const f=+document.getElementById("cfF").value||0;const n={};FKEYS.forEach(k=>n[k]=0);n.kcal=kcal;n.p=p;n.c=c;n.f=f;state.customFoods=[...state.customFoods,{name:nm,n}];save(K.custom,state.customFoods);render();};
@@ -1490,8 +1584,34 @@ function syncSession(){if(!state.plan.find(d=>d.id===state.trainDayId))state.tra
 
 function doExport(){const dump={};Object.values(K).forEach(k=>{const v=localStorage.getItem(k);if(v)dump[k]=v;});const txt=JSON.stringify(dump);const ta=document.getElementById("dataArea");if(ta)ta.value=txt;if(navigator.clipboard)navigator.clipboard.writeText(txt).then(()=>alert("Kopiert.")).catch(()=>{});}
 function doImport(){const ta=document.getElementById("dataArea");if(!ta||!ta.value.trim())return;try{applyImportObj(JSON.parse(ta.value.trim()));alert("Geladen.");}catch{alert("Text unlesbar — bitte vollständigen Export einfügen.");}}
-function doReset(){if(!confirm("Wirklich ALLE Daten löschen?"))return;Object.values(K).forEach(k=>localStorage.removeItem(k));reloadState();}
-function applyImportObj(obj){Object.entries(obj).forEach(([k,v])=>{if(Object.values(K).includes(k))localStorage.setItem(k,typeof v==="string"?v:JSON.stringify(v));});reloadState();}
+function doReset(){if(!confirm("Wirklich ALLE Daten löschen?"))return;Object.values(K).forEach(k=>localStorage.removeItem(k));dayUndo=null;taskEditor=null;reloadState();}
+function applyImportObj(obj){
+ const record=v=>v!==null&&typeof v==='object'&&!Array.isArray(v),str=v=>typeof v==='string',num=v=>Number.isFinite(v),date=v=>str(v)&&/^\d{4}-\d{2}-\d{2}$/.test(v);
+ const exercise=e=>record(e)&&str(e.name)&&Array.isArray(e.sets)&&e.sets.every(record);
+ const validators={
+  [K.plan]:v=>Array.isArray(v)&&v.length>0&&v.every(d=>record(d)&&str(d.id)&&str(d.label)&&Array.isArray(d.exercises)&&d.exercises.every(e=>record(e)&&str(e.name)&&num(e.sets)&&e.sets>0&&str(e.reps)&&['kg','s','bw','min'].includes(e.unit))),
+  [K.weight]:v=>Array.isArray(v)&&v.every(x=>record(x)&&date(x.date)&&num(x.kg)&&x.kg>0),
+  [K.history]:v=>Array.isArray(v)&&v.every(x=>record(x)&&str(x.date)&&str(x.dayLabel)&&Array.isArray(x.exercises)&&x.exercises.every(exercise)),
+  [K.custom]:v=>Array.isArray(v)&&v.every(x=>record(x)&&str(x.name)&&record(x.n)),
+  [K.nextDay]:v=>v===null||str(v),
+  [K.food]:v=>record(v)&&Object.values(v).every(a=>Array.isArray(a)&&a.every(x=>record(x)&&str(x.name)&&num(x.grams)&&record(x.n))),
+  [K.water]:v=>record(v)&&Object.values(v).every(x=>num(x)&&x>=0),
+  [K.acts]:v=>record(v)&&Object.values(v).every(a=>Array.isArray(a)&&a.every(x=>record(x)&&str(x.name)&&num(x.min)&&num(x.kcal))),
+  [K.shifts]:v=>record(v)&&Object.values(v).every(x=>Object.hasOwn(SHIFTS,x)),
+  [K.rota]:v=>record(v)&&str(v.start)&&Array.isArray(v.seq)&&v.seq.every(x=>Object.hasOwn(SHIFTS,x)),
+  [K.dayPlans]:v=>record(v)&&Object.values(v).every(p=>record(p)&&Array.isArray(p.items)&&p.items.every(x=>record(x)&&str(x.id)&&str(x.text)&&/^([01]\d|2[0-3]):[0-5]\d$/.test(x.time))),
+  [K.draft]:v=>v===null||(record(v)&&str(v.dayId)&&Array.isArray(v.log)&&v.log.every(exercise)),
+  [K.settings]:v=>record(v)&&(!('theme' in v)||['obsidian','marmor'].includes(v.theme))&&['rest','protein'].every(k=>!(k in v)||(num(v[k])&&v[k]>=0)),
+  [K.profile]:v=>record(v)&&['age','height','activity'].every(k=>!(k in v)||(num(v[k])&&v[k]>0)),
+  [K.last]:v=>record(v)&&Object.values(v).every(record),[K.pr]:v=>record(v)&&Object.values(v).every(x=>record(x)&&str(x.date))
+ };
+ if(!record(obj))throw new Error('Invalid backup');
+ const entries=Object.entries(obj).filter(([k])=>Object.values(K).includes(k)).map(([k,v])=>[k,typeof v==='string'?JSON.parse(v):v]);
+ if(!entries.length||entries.some(([k,v])=>!validators[k]?.(v)))throw new Error('Invalid backup contents');
+ const previous=entries.map(([k])=>[k,localStorage.getItem(k)]);
+ try{entries.forEach(([k,v])=>localStorage.setItem(k,JSON.stringify(v)));}catch(error){previous.forEach(([k,v])=>{try{if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v);}catch{}});throw error;}
+ reloadState();
+}
 function doDownload(){const dump={};Object.values(K).forEach(k=>{const v=localStorage.getItem(k);if(v)dump[k]=v;});const blob=new Blob([JSON.stringify(dump,null,0)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="hermes-backup-"+todayKey()+".json";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function doFileImport(){const inp=document.getElementById("fileInput");if(!inp)return;inp.value="";inp.onchange=()=>{const file=inp.files&&inp.files[0];if(!file)return;const r=new FileReader();r.onload=()=>{try{applyImportObj(JSON.parse(String(r.result)));alert("Geladen.");}catch{alert("Datei unlesbar — bitte eine Hermes-Backup-Datei wählen.");}};r.readAsText(file);};inp.click();}
 function reloadState(){
@@ -1501,7 +1621,7 @@ function reloadState(){
  state.shiftByDate=load(K.shifts,{});state.nextDayId=load(K.nextDay,null);state.foodLog=load(K.food,{});state.waterLog=load(K.water,{});state.customFoods=load(K.custom,[]);state.activityLog=load(K.acts,{});state.rota=load(K.rota,{start:"",seq:[]});state.dayPlans=load(K.dayPlans,{});state.dayPlanMsg="";
  if(!state.plan.length)state.plan=defaultPlan();if(!state.plan.find(d=>d.id===state.nextDayId))state.nextDayId=state.plan[0].id;
  state.trainDayId=state.nextDayId;state.log=buildLog(state.nextDayId);state.saved=false;state.note="";state.acc={};state.libFor=null;state.foodPicker=false;state.actAdding=false;
- applyTheme();render();
+ dayUndo=null;taskEditor=null;stopRest();if(!load(K.plan,null))sP();restoreWorkout();applyTheme();render();
 }
 
 /* Icon: Apple-Touch-Icon (PNG) zur Laufzeit erzeugen — iOS nutzt kein SVG-Manifest-Icon.
@@ -1515,7 +1635,13 @@ if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.s
 const exmodalEl=document.getElementById("exmodal");
 exmodalEl.onclick=e=>{if(e.target===exmodalEl)closeExInfo();};
 
-applyTheme();initScanner();render();
+if(!load(K.plan,null))sP();restoreWorkout();applyTheme();initScanner();render();
+document.addEventListener('visibilitychange',()=>{if(document.hidden)persistWorkout();else if(activeDate!==todayKey()){activeDate=todayKey();taskEditor=null;dayUndo=null;state.dayPlanMsg='';render();}});
+window.addEventListener('pagehide',persistWorkout);
+setInterval(()=>{if(!document.hidden&&activeDate!==todayKey()){activeDate=todayKey();taskEditor=null;dayUndo=null;state.dayPlanMsg='';render();}},30000);
+window.addEventListener('offline',()=>notifyUser('Du bist offline. Deine Einträge bleiben auf diesem Gerät.'));
+window.addEventListener('online',()=>notifyUser('Wieder online.'));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeExInfo();});
 </script>
 </body>
 </html>

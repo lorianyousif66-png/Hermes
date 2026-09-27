@@ -42,6 +42,29 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 ## Wie testen
 
+### Hermes 2 (September 2026)
+
+- Beide ursprünglichen Farbpaletten bleiben unverändert. Neue Gestaltung: Seitenüberschriften,
+  Fokus-Karte, Schnellaktionen, Makro-Übersicht, Wasser-Schnelleingabe, schwebende Navigation,
+  größere Bedienelemente und sichtbarer Tastaturfokus. Zoom und reduzierte Bewegung werden unterstützt.
+- Tagesplan: eigenes Formular (`taskEditorForm`) zum Hinzufügen/Bearbeiten, `dayUndo` für die
+  letzte Änderung, eindeutige Treffer bei Textbefehlen, Sprache erst als bestätigbarer Entwurf.
+  `data-taskdelete` gehört ausschließlich zum Tagesplan; `data-daydel` bleibt dem Trainingsplan vorbehalten.
+- Nachtschicht-Einträge können `dayOffset: 1` für den Folgetag enthalten; Sortierung berücksichtigt
+  diesen Wert. Automatische Vorlagen respektieren den ersten freien Tag nach Nacht und Training am Vortag.
+  Ein angepasster Plan bleibt bei Schichtänderungen erhalten und zeigt einen Hinweis auf die neue Vorlage.
+- Tageswechsel wird beim Wiederöffnen und alle 30 Sekunden in der sichtbaren App erkannt.
+- `hermes:draft` speichert laufende Trainingseinheiten. `persistWorkout` / `restoreWorkout`
+  erhalten Satzwerte und Notizen nach Reload. Beim Abschluss wird der Entwurf entfernt.
+  Vor Wechsel zu einer anderen Einheit wird bei ungespeicherten Eingaben nachgefragt.
+- Pausen basieren auf einer Endzeit statt auf gezählten Intervallen; Hintergrundpausen verfälschen sie nicht.
+- Lebensmittelauswahl: zuletzt verwendete Einträge priorisieren, 12 Ergebnisse zunächst anzeigen,
+  Suchfilter und leere Treffer erklären; Einzelzutaten mit kurzem Status statt Overlay bestätigen.
+- Backups werden vollständig validiert, bevor Daten geschrieben werden. Die Gewichtskurve verwendet
+  tatsächliche Datumsabstände. Service Worker v6 überschreibt die Offline-App nicht mit HTTP-Fehlerseiten.
+- Browser-Regressionsprüfung außerhalb des Repositories: beide Themes, 320/390/560/1024 px,
+  alle Tabs und Unteransichten, Tagesplan/Undo, Entwurfswiederherstellung, Import, Tageswechsel und Offline.
+
 - Datei einfach im Browser öffnen (`open index.html` / Doppelklick) oder
   `python3 -m http.server` im Ordner und `localhost:8000` aufrufen.
 - Syntax-Check des Inline-JS bei Bedarf:
