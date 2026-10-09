@@ -64,6 +64,15 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
   `removeTrainingSet` / `undoTrainingSet` ändern nur die laufende Einheit (mindestens ein Satz bleibt).
   Undo erscheint kurz unten und dauerhaft oben in der Einheit; Gewichte, Wiederholungen und Erledigt-Status
   werden vollständig wiederhergestellt. Auch leere, strukturell geänderte Einheiten werden zwischengespeichert.
+- Training → Einheit: Startzeit und Dauer laufen ab „Starten“ oder der ersten Eingabe und werden im Entwurf
+  gespeichert. Der Verlauf enthält die Dauer neuer Einheiten; alte Einträge bleiben lesbar.
+  „Vorher“ zeigt pro Satz den gleich positionierten, erledigten Satz aus der letzten Einheit dieser Übung.
+  Satztyp wechselt N (Normal) → F (Muskelversagen) → W (Aufwärmen) → D (Dropsatz);
+  Aufwärmsätze zählen nicht für Rekorde oder „Letztes Mal“. Der Pausen-Timer kann pausiert, fortgesetzt,
+  um ±15 Sekunden geändert, neu gestartet und übersprungen werden. „Übungsverlauf ansehen“ öffnet
+  im Übungsfenster die letzten Bestwerte und eine monochrome Leistungskurve. Übungseinstellungen/Notizen
+  (z. B. „Sitz 5“) werden je Einheit gespeichert und beim nächsten Mal aus der letzten Einheit vorbelegt.
+  Die Farbschemata bleiben unverändert.
 - Lebensmittelauswahl: zuletzt verwendete Einträge priorisieren, 12 Ergebnisse zunächst anzeigen,
   Suchfilter und leere Treffer erklären; Einzelzutaten mit kurzem Status statt Overlay bestätigen.
 - Backups werden vollständig validiert, bevor Daten geschrieben werden. Die Gewichtskurve verwendet
@@ -153,7 +162,8 @@ hermes:dayplans  automatisch erzeugte Tagespläne je Datum inkl. manueller Ände
   - `unit`: `"kg"` | `"s"` (Sekunden, z. B. Plank) | `"bw"` (Körpergewicht, kein Gewichtsfeld)
     | `"min"` (Minuten, Cardio — kein Gewichtsfeld)
   - `steps`: kurze Anleitungsschritte (aus der Bibliothek kopiert oder leer)
-- **Session-Log-Übung:** wie Übung, aber `sets: [{ weight, reps, done }]`
+- **Session-Log-Übung:** wie Übung, aber `note` (Übungseinstellung) und `sets: [{ weight, reps, done, type }]`,
+  wobei `type` für ältere Daten fehlen darf (dann `normal`).
 - **Lebensmittel (DB):** kompaktes Array
   `[name, kcal, protein, kohlenh, fett, ballast, VitC, VitD, Ca, Fe, Mg, K]` pro 100 g.
   Reihenfolge = `FKEYS`. Werte sind Näherungswerte.
