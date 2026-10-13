@@ -44,6 +44,20 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 ### Hermes 3 (Oktober 2026)
 
+- 3.1: Training → Vorlagen zeigt Karten statt des Tabellen-Editors. `templateDraft`
+  ist eine separate Kopie; erst Speichern schreibt in `hermes:plan`. Ungespeicherte
+  Änderungen werden beim Verlassen bestätigt. Neue Vorlagen, Duplikate und Löschen
+  über Kartenmenü; aktive Vorlagen und die letzte Vorlage können nicht gelöscht werden.
+  Der Assistent fügt Vorlagen hinzu, ohne vorhandene Vorlagen/aktive Einheiten zu ersetzen.
+- Tipp auf Vorlagen-Übungsnamen öffnet `showTemplateExercise`: Ersetzen, Sätze/Ziel/Einheit,
+  Reihenfolge und Entfernen. `openExercisePicker` als natives Bottom-Sheet bietet Suche,
+  Muskelgruppen, Mehrfachauswahl zum Hinzufügen und eigene Übungen. Speichern einer
+  Vorlage lässt eine laufende Einheit unverändert. Keine neuen Speicherschlüssel.
+- Auch in der aktiven Einheit öffnet der Übungsname das Optionsmenü. Ersetzen gilt nur
+  für diese Einheit, fragt vor Verwerfen bereits eingegebener Satzwerte und bleibt nach
+  Reload erhalten. Alte Historie/Rekorde und die Vorlage bleiben unverändert. Cache v9.
+- `test-templates.cjs` prüft den gesamten Vorlagenablauf, Abbruch, Übungen ersetzen,
+  aktive Entwürfe, Wiederherstellung, beide Themes und schmale Handyansichten.
 - Beide Farbpaletten unverändert. Kürzere Seitenüberschriften, ruhigere Flächen,
   einheitliche Navigation und Bedienelemente. Ernährung: Trends/Mikronährstoffe
   aufklappbar; Plan-Assistent ebenfalls. `render` erhält geöffnete `data-disclosure`
@@ -149,8 +163,8 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 - `training` — Unternavigation (`state.trainView`: `log` | `plan` | `hist`, via `trainNav()`):
   - **Workouts** (`log`): Workout-Karten, danach fokussiertes Session-Logging
     (Sätze: Gewicht/Wdh./erledigt), Pausen-Timer, Notizen, Übungsoptionen als Bottom-Sheet.
-  - **Plan** (`plan`): **Plan-Assistent** (`wizEditor`, generiert Plan nach Ziel + Tagen)
-    + **Plan bearbeiten** (`planEditor`, inkl. Übungs-Bibliothek `viewLibrary`).
+  - **Vorlagen** (`plan`): Vorlagen-Karten und separater Editor (`planEditor`),
+    Übungsoptionen/Übungsbibliothek als Bottom-Sheets. Optionaler Assistent (`wizEditor`).
   - **Verlauf** (`hist`): Trainings-Historie (`histEditor`).
 - `essen` — Ernährungs-Tracker: Tagesbedarf vs. Konsum (Makros + Mikros + Wasser).
   Einträge sind in **Mahlzeiten** gruppiert (`MEALS`: Frühstück/Mittag/Abend/Snacks,

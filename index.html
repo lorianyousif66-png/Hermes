@@ -348,6 +348,7 @@ body.workout-focus .hd,body.workout-focus .nav{display:none}body.workout-focus .
 .session-clock{border:0;background:none;color:var(--text);min-height:44px;cursor:pointer;padding:0}.session-progress small{font-size:11px;color:var(--muted)}
 @keyframes set-confirm{50%{transform:scale(.88)}}
 @media(max-width:360px){.routine-card{padding:14px}.session-bar{margin:0 -12px;padding-left:12px;padding-right:12px}.main{padding-left:12px;padding-right:12px}.session-bar .btn{font-size:12px;padding:10px}.exercise-card .sethead,.exercise-card .setrow{gap:4px;grid-template-columns:44px minmax(37px,1fr) minmax(40px,.8fr) minmax(40px,.8fr) 40px}}
+.template-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px}.template-toolbar .btn{width:auto}.template-tile{position:relative}.template-tile .routine-card{width:100%;height:100%;padding-top:20px}.template-tile .routine-card b{padding-right:20px}.template-more{position:absolute;right:10px;top:10px;width:36px;height:36px;font-size:18px}.template-name{width:100%;font-size:26px;font-weight:600;letter-spacing:-.7px;background:transparent;border:0;border-bottom:1px solid var(--hair);color:var(--text);padding:12px 0;outline-offset:4px}.template-list{display:grid;gap:8px}.template-ex{display:flex;align-items:center;gap:14px;padding:18px 14px;border:1px solid var(--hair);border-radius:16px;background:var(--surface);color:var(--text);width:100%;text-align:left;cursor:pointer}.template-ex .num{color:var(--muted);font-size:12px}.template-ex .copy{flex:1;min-width:0}.template-ex b{font-size:15px;display:block;overflow-wrap:anywhere}.template-ex small{display:block;font-size:11px;color:var(--muted);margin-top:5px}.template-empty{text-align:center;padding:34px 24px;border:1px dashed var(--line);border-radius:20px}.template-empty p{font-size:13px;color:var(--muted);line-height:1.7}.sheet-form{display:grid;gap:14px;margin:18px 0}.sheet-form label{display:grid;gap:6px;font-size:12px;color:var(--muted)}.sheet-form .inp{text-align:left}.sheet-form .form-pair{grid-template-columns:1fr 1fr}.picker-tools{position:sticky;top:-10px;background:var(--surface);padding:8px 0;z-index:2}.picker-tools .searchbar{margin-bottom:8px}.picker-tools .sel{width:100%}.picker-results{max-height:42dvh;overflow:auto;overscroll-behavior:contain}.picker-footer{padding-top:14px}.picker-empty{font-size:13px;color:var(--muted);padding:18px 0}.sheet-action[hidden]{display:none}.template-context{font-size:12px;color:var(--muted);line-height:1.6;margin:0}.template-actions{display:flex;gap:8px}.template-actions .btn{flex:1}.ui-sheet h2,.session-intro h1{overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -773,6 +774,7 @@ const state={
  foodLog:load(K.food,{}),waterLog:load(K.water,{}),customFoods:load(K.custom,[]),activityLog:load(K.acts,{}),dayPlans:load(K.dayPlans,{}),
  trainDayId:null,log:null,saved:false,note:"",startedAt:null,acc:{},rest:{active:false,paused:false,left:0,base:0,timer:null},
  workoutOpen:false,workoutMinimized:false,workoutScroll:0,
+ templateDraft:null,templateOriginal:null,
  libFor:null,foodPicker:false,wiz:{focus:"aufbau",days:2},trendMetric:"kcal",scanAdded:null,trainView:"log",
  mealFor:"fruehstueck",lastQuote:-1,trendDays:14,actAdding:false,dayPlanMsg:"",
 };
@@ -827,7 +829,7 @@ const main=document.getElementById("main"),navEl=document.getElementById("nav");
    Scroll-Position erhalten; nur echte Ansichts-Wechsel springen nach oben. */
 let lastViewSig="";
 function render(){
- const sig=[state.tab,state.trainView,state.libFor?"lib":"",state.foodPicker?"fp":"",state.actAdding?"act":"",state.saved?"done":"",workoutFocused()?'session':''].join("|");
+ const sig=[state.tab,state.trainView,state.libFor?"lib":"",state.foodPicker?"fp":"",state.actAdding?"act":"",state.saved?"done":"",workoutFocused()?'session':'',state.templateDraft?.id||''].join("|");
  const y=window.scrollY;
  const disclosures=[...main.querySelectorAll('[data-disclosure][open]')].map(el=>el.dataset.disclosure);
  const v={heute:viewHeute,training:viewTraining,essen:viewEssen,gewicht:viewGewicht,mehr:viewMehr}[state.tab];
@@ -971,7 +973,7 @@ function pageHeading(){
  const titles={heute:['Heute','Dein Tag, in deinem Tempo.'],training:['Training','Ein guter Moment, um stärker zu werden.'],essen:['Ernährung','Alles, was dich gut versorgt.'],gewicht:['Fortschritt','Deine Entwicklung im Blick.'],mehr:['Einstellungen','So passt Hermes zu dir.']};
  const [title,sub]=titles[state.tab];
  const date=new Date().toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'});
- return `<div class="page-heading"><div class="date-line"><span>${esc(date)}</span><span class="status-pill">${navigator.onLine?'Hermes 3.0':'Offline'}</span></div><h1>${title}</h1><p>${sub}</p></div>`;
+ return `<div class="page-heading"><div class="date-line"><span>${esc(date)}</span><span class="status-pill">${navigator.onLine?'Hermes 3.1':'Offline'}</span></div><h1>${title}</h1><p>${sub}</p></div>`;
 }
 function taskEditorForm(item){return `<form id="taskForm" class="inline-form"><label>Was steht an?<input id="taskTitle" class="inp" style="text-align:left" required maxlength="100" value="${esc(item?.text||'')}" placeholder="Zum Beispiel: Einkaufen"></label><div class="form-pair"><label>Uhrzeit<input id="taskTime" class="inp" type="time" required value="${esc(item?.time||'17:00')}"></label><label>Tag<select id="taskOffset" class="sel"><option value="0">Heute</option><option value="1" ${item?.dayOffset?'selected':''}>Folgetag (nach Mitternacht)</option></select></label></div><div class="form-actions"><button type="button" class="btn btn-ghost btn-sm" data-taskcancel>Abbrechen</button><button class="btn btn-sm" type="submit">Speichern</button></div></form>`;}
 function wireUpgrade(){
@@ -1083,12 +1085,13 @@ function trainingSheet(title,content,wireContent){
  dialog.innerHTML=`<div class="sheet-handle" aria-hidden="true"></div><div class="sheet-heading"><h2 id="sheetTitle">${esc(title)}</h2><button class="quiet-icon" data-sheetclose aria-label="Schließen">×</button></div>${content}`;
  dialog.querySelector('[data-sheetclose]').onclick=()=>dialog.close();
  dialog.onclick=e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}};
- wireContent(dialog);dialog.showModal();
+ wireContent(dialog);if(!dialog.open)dialog.showModal();dialog.scrollTop=0;
 }
 function showSetTypes(ei,si){const set=state.log[ei].sets[si],hints={normal:'Dein regulärer Arbeitssatz',failure:'Bis zum Muskelversagen',warmup:'Vorbereitung · zählt nicht als Rekord',drop:'Weniger Gewicht, direkt weiter'};
  trainingSheet(`Satz ${si+1} · Satztyp`,SET_TYPES.map(([key,label,name])=>`<button class="sheet-action" data-choosetype="${key}" aria-pressed="${(set.type||'normal')===key}"><b>${label}</b><span>${name}<small>${hints[key]}</small></span></button>`).join(''),dialog=>{dialog.querySelectorAll('[data-choosetype]').forEach(b=>b.onclick=()=>{ensureWorkoutStarted();set.type=b.dataset.choosetype;dialog.close();render();main.querySelector(`[data-settype="${ei}-${si}"]`)?.focus({preventScroll:true});});});
 }
-function showExerciseActions(ei){const ex=state.log[ei];trainingSheet(ex.name,`<button class="sheet-action" data-action="note"><span>Notiz & Geräteeinstellung<small>Zum Beispiel Sitzhöhe oder Griff</small></span>↗</button><button class="sheet-action" data-action="info"><span>Anleitung & Muskeln</span>↗</button><button class="sheet-action" data-exhistory="${esc(ex.name)}"><span>Übungsverlauf<small>Letzte Einheiten und Bestwerte</small></span>↗</button><button class="sheet-action" data-delset="${ei}" ${ex.sets.length<=1?'disabled':''}><span>Letzten Satz entfernen<small>Du kannst Sätze auch nach links wischen.</small></span>−</button>`,dialog=>{
+function showExerciseActions(ei){const ex=state.log[ei];trainingSheet(ex.name,`<button class="sheet-action" data-replaceexercise><span>Übung ersetzen<small>Nur für diese Trainingseinheit</small></span>↔</button><button class="sheet-action" data-action="note"><span>Notiz & Geräteeinstellung<small>Zum Beispiel Sitzhöhe oder Griff</small></span>↗</button><button class="sheet-action" data-action="info"><span>Anleitung & Muskeln</span>↗</button><button class="sheet-action" data-exhistory="${esc(ex.name)}"><span>Übungsverlauf<small>Letzte Einheiten und Bestwerte</small></span>↗</button><button class="sheet-action" data-delset="${ei}" ${ex.sets.length<=1?'disabled':''}><span>Letzten Satz entfernen<small>Du kannst Sätze auch nach links wischen.</small></span>−</button>`,dialog=>{
+ dialog.querySelector('[data-replaceexercise]').onclick=()=>openExercisePicker({session:ei});
  dialog.querySelector('[data-action="note"]').onclick=()=>{dialog.close();const note=main.querySelector(`[data-exnote="${ei}"]`);note.closest('details').open=true;note.focus();};
  dialog.querySelector('[data-action="info"]').onclick=()=>{dialog.close();openExInfo(ex.name);};
  dialog.querySelector('[data-exhistory]').onclick=()=>{dialog.close();openExInfo(ex.name,true);};
@@ -1096,16 +1099,13 @@ function showExerciseActions(ei){const ex=state.log[ei];trainingSheet(ex.name,`<
  });}
 function showExerciseJump(){trainingSheet('Übung wählen',state.log.map((ex,i)=>`<button class="sheet-action" data-jumpex="${i}"><b>${String(i+1).padStart(2,'0')}</b><span>${esc(ex.name)}<small>${ex.sets.filter(s=>s.done).length} / ${ex.sets.length} Sätze erledigt</small></span>↓</button>`).join(''),dialog=>{dialog.querySelectorAll('[data-jumpex]').forEach(b=>b.onclick=()=>{dialog.close();const section=document.getElementById('exercise-'+b.dataset.jumpex);section.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});section.querySelector('.ex-name').focus({preventScroll:true});});});}
 function trainNav(){
- const items=[["log","Workouts"],["plan","Mein Plan"],["hist","Verlauf"]];
+ const items=[["log","Workouts"],["plan","Vorlagen"],["hist","Verlauf"]];
  return `<nav class="train-tabs" aria-label="Trainingsbereiche">${items.map(([k,l])=>`<button ${state.trainView===k?'aria-current="page"':''} data-trainview="${k}">${l}</button>`).join("")}</nav>`;
 }
 function viewTraining(){
  if(state.libFor)return viewLibrary();
  const nav=trainNav();
- if(state.trainView==="plan")return `<div class="stack">${nav}
-  <section class="card"><div class="eyebrow">Plan bearbeiten</div>${planEditor()}</section>
-  <details class="disclosure" data-disclosure="wizard"><summary>Neuen Plan zusammenstellen</summary><div class="disclosure-content">${wizEditor()}</div></details>
- </div>`;
+ if(state.trainView==="plan")return `<div class="stack">${nav}${planEditor()}</div>`;
  if(state.trainView==="hist")return `<div class="stack">${nav}
   ${prCard()}
   <section class="card"><div class="eyebrow">Trainings-Verlauf</div>${histEditor()}</section>
@@ -1576,8 +1576,8 @@ function wizEditor(){
   <p class="muted sm" id="wizNote" style="margin:8px 0 0">${wizNote(w.focus)}</p>
   <span class="lbl-sm">Trainingstage pro Woche</span>
   <div class="stepper"><button data-wizdays="-1">−</button><span class="val" id="wizDaysVal">${w.days}</span><button data-wizdays="1">+</button></div>
-  <button class="btn" data-wizmake="1" style="margin-top:16px">Plan erstellen</button>
-  <p class="muted sm" style="margin-top:8px">Erstellt einen frischen Plan und ersetzt deinen aktuellen. Feinschliff danach unten bei „Plan bearbeiten".</p>`;
+  <button class="btn" data-wizmake="1" style="margin-top:16px">Vorlagen erstellen</button>
+  <p class="muted sm" style="margin-top:8px">Fügt passende Workout-Vorlagen zu deiner Sammlung hinzu. Du kannst jede Vorlage anschließend anpassen.</p>`;
 }
 function profileEditor(){
  const p=state.profile,kg=latestKg();
@@ -1591,11 +1591,39 @@ function profileEditor(){
   <p class="muted sm">Gewicht (${kg?kg+" kg":"noch nicht gesetzt"}) kommt aus dem Tab „Gewicht". ${kg?'':'<b>Bitte dort eintragen.</b>'}</p>`;
 }
 function planEditor(){
- const days=state.plan.map((d,di)=>{
-  const ex=d.exercises.map((e,ei)=>`<div class="exrow-ed"><input class="inp" style="text-align:left" value="${esc(e.name)}" data-exname="${d.id}|${e.id}"><input class="inp" type="number" value="${e.sets}" data-exsets="${d.id}|${e.id}" title="Sätze"><input class="inp" value="${esc(e.reps)}" data-exreps="${d.id}|${e.id}" title="Wdh."></div><div class="exrow-ed2"><select class="sel" data-exunit="${d.id}|${e.id}">${Object.entries(UNITS).map(([k,v])=>`<option value="${k}" ${e.unit===k?'selected':''}>${v.lbl}</option>`).join("")}</select><div class="minirow" style="margin-left:auto"><button class="iconbtn" data-exmove="${d.id}|${e.id}|-1" ${ei===0?'disabled':''}>↑</button><button class="iconbtn" data-exmove="${d.id}|${e.id}|1" ${ei===d.exercises.length-1?'disabled':''}>↓</button><button class="iconbtn" data-exdel="${d.id}|${e.id}">✕</button></div></div>`).join("");
-  return `<div class="editday"><div class="editday-top"><input class="inp" style="text-align:left" value="${esc(d.label)}" data-daylabel="${d.id}" placeholder="Tagname"><button class="iconbtn" data-daymove="${d.id}|-1" ${di===0?'disabled':''}>↑</button><button class="iconbtn" data-daymove="${d.id}|1" ${di===state.plan.length-1?'disabled':''}>↓</button></div>${ex}<div class="minirow" style="margin-top:8px;gap:8px"><button class="btn btn-ghost btn-sm" style="flex:1" data-openlib="${d.id}">+ Übung aus Liste</button><button class="btn btn-ghost btn-sm" style="flex:1" data-daydel="${d.id}" ${state.plan.length<=1?'disabled':''}>Tag löschen</button></div></div>`;
- }).join("");
- return `${days}<button class="btn" data-dayadd="1">+ Trainingstag</button>`;
+ const draft=state.templateDraft;
+ if(draft)return `<div class="template-toolbar"><button class="textbtn" data-templateback>← Vorlagen</button><button class="btn btn-sm" data-templatesave ${!draft.label.trim()||!draft.exercises.length?'disabled':''}>Speichern</button></div><section><label class="eyebrow" for="templateName">Name deiner Vorlage</label><input class="template-name" id="templateName" maxlength="80" value="${esc(draft.label)}" placeholder="Zum Beispiel: Rücken & Bizeps"><p class="training-caption">${draft.exercises.length} Übungen · ${draft.exercises.reduce((n,e)=>n+e.sets,0)} Sätze</p></section><div class="template-list">${draft.exercises.map((e,i)=>`<button class="template-ex" data-templateex="${i}"><span class="num">${String(i+1).padStart(2,'0')}</span><span class="copy"><b>${esc(e.name)}</b><small>${e.sets} Sätze · ${esc(e.reps)} ${UNITS[e.unit]?.r||'Wdh.'}</small></span><span aria-hidden="true">···</span></button>`).join('')||`<div class="template-empty"><span class="routine-icon" style="margin:auto">${NAVICONS.training}</span><h3>Dein Workout beginnt hier</h3><p>Wähle deine Übungen aus und stelle deine eigene Vorlage zusammen.</p></div>`}</div><button class="btn btn-ghost" data-templateadd>+ Übungen hinzufügen</button><p class="template-context">Tippe auf eine Übung, um sie zu ersetzen, Sätze anzupassen oder die Reihenfolge zu ändern. Änderungen werden mit „Speichern“ übernommen.</p>`;
+ return `<div class="template-toolbar"><div><h2 class="training-section-title">Deine Vorlagen</h2><p class="training-caption">Deine Workouts, so wie du sie brauchst.</p></div><button class="btn btn-sm" data-templatenew>+ Vorlage</button></div><div class="routine-grid">${state.plan.map(d=>`<div class="template-tile"><button class="routine-card" data-templateopen="${d.id}" aria-label="Vorlage ${esc(d.label)} bearbeiten"><span class="routine-icon" aria-hidden="true">${NAVICONS.training}</span><b>${esc(d.label)}</b><p>${d.exercises.map(e=>esc(e.name)).join(' · ')||'Noch keine Übungen'}</p><small>${d.exercises.length} Übungen · ${d.exercises.reduce((n,e)=>n+e.sets,0)} Sätze</small></button><button class="quiet-icon template-more" data-templatemenu="${d.id}" aria-label="Optionen für Vorlage ${esc(d.label)}">···</button></div>`).join('')}</div><details class="disclosure" data-disclosure="wizard"><summary>Plan automatisch zusammenstellen</summary><div class="disclosure-content">${wizEditor()}</div></details>`;
+}
+function openTemplate(id){const original=state.plan.find(d=>d.id===id);state.templateDraft=original?JSON.parse(JSON.stringify(original)):{id:uid(),label:'',exercises:[]};state.templateOriginal=JSON.stringify(state.templateDraft);render();}
+function leaveTemplate(){if(!state.templateDraft)return true;if(JSON.stringify(state.templateDraft)!==state.templateOriginal&&!confirm('Ungespeicherte Änderungen an dieser Vorlage verwerfen?'))return false;state.templateDraft=null;state.templateOriginal=null;return true;}
+function saveTemplate(){const d=state.templateDraft;if(!d||!d.label.trim()||!d.exercises.length)return;persistWorkout();const active=!state.saved&&!!load(K.draft,null),copy=JSON.parse(JSON.stringify(d));copy.label=copy.label.trim();const i=state.plan.findIndex(x=>x.id===d.id);if(i<0)state.plan.push(copy);else state.plan[i]=copy;sP();state.templateDraft=null;state.templateOriginal=null;if(!active&&!state.saved)syncSession();render();notifyUser(active?'Vorlage gespeichert. Deine laufende Einheit bleibt unverändert.':'Vorlage gespeichert. Bereit für dein nächstes Training.');}
+function showTemplateMenu(id){const day=state.plan.find(d=>d.id===id);if(!day)return;const active=!state.saved&&!!load(K.draft,null)&&state.trainDayId===id;
+ trainingSheet(day.label,`<button class="sheet-action" data-tedit><span>Vorlage bearbeiten</span>↗</button><button class="sheet-action" data-tcopy><span>Vorlage duplizieren</span>＋</button><button class="sheet-action" data-tdelete ${state.plan.length<=1||active?'disabled':''}><span>Vorlage löschen<small>${active?'Beende zuerst die laufende Einheit.':state.plan.length<=1?'Mindestens eine Vorlage bleibt erhalten.':'Gespeicherte Trainings bleiben erhalten.'}</small></span>−</button>`,dialog=>{
+ dialog.querySelector('[data-tedit]').onclick=()=>{dialog.close();openTemplate(id);};
+ dialog.querySelector('[data-tcopy]').onclick=()=>{dialog.close();openTemplate(id);state.templateDraft.id=uid();state.templateDraft.label=day.label+' (Kopie)';state.templateDraft.exercises.forEach(e=>e.id=uid());render();};
+ dialog.querySelector('[data-tdelete]').onclick=()=>{if(!confirm(`Vorlage „${day.label}“ löschen?`))return;dialog.close();state.plan=state.plan.filter(d=>d.id!==id);if(state.nextDayId===id){state.nextDayId=state.plan[0].id;save(K.nextDay,state.nextDayId);}sP();if(state.trainDayId===id)syncSession();render();notifyUser('Vorlage entfernt.');};
+ });}
+function showTemplateExercise(index){const draft=state.templateDraft,ex=draft?.exercises[index];if(!ex)return;
+ trainingSheet(ex.name,`<button class="sheet-action" data-replaceexercise><span>Übung ersetzen<small>Eine andere Übung aus der Bibliothek wählen</small></span>↔</button><form class="sheet-form" id="templateExForm"><div class="form-pair"><label>Sätze<input class="inp" id="templateSets" type="number" inputmode="numeric" min="1" max="30" step="1" required value="${ex.sets}"></label><label>Wiederholungen / Dauer<input class="inp" id="templateReps" maxlength="30" required value="${esc(ex.reps)}" placeholder="8–12"></label></div><label>Erfassung<select class="sel" id="templateUnit">${Object.entries(UNITS).map(([key,u])=>`<option value="${key}" ${ex.unit===key?'selected':''}>${u.lbl}</option>`).join('')}</select></label><button class="btn" type="submit">Übernehmen</button></form><div class="template-actions"><button class="btn btn-ghost btn-sm" data-tup ${index===0?'disabled':''}>↑ Nach oben</button><button class="btn btn-ghost btn-sm" data-tdown ${index===draft.exercises.length-1?'disabled':''}>↓ Nach unten</button></div><button class="sheet-action" data-tremove><span>Aus Vorlage entfernen</span>−</button>`,dialog=>{
+ dialog.querySelector('#templateExForm').onsubmit=e=>{e.preventDefault();const reps=dialog.querySelector('#templateReps').value.trim();if(!reps)return;ex.sets=+dialog.querySelector('#templateSets').value;ex.reps=reps;ex.unit=dialog.querySelector('#templateUnit').value;dialog.close();render();};
+ dialog.querySelector('[data-replaceexercise]').onclick=()=>openExercisePicker({replace:index});
+ const move=dir=>{const j=index+dir;[draft.exercises[index],draft.exercises[j]]=[draft.exercises[j],draft.exercises[index]];dialog.close();render();};
+ dialog.querySelector('[data-tup]').onclick=()=>move(-1);dialog.querySelector('[data-tdown]').onclick=()=>move(1);
+ dialog.querySelector('[data-tremove]').onclick=()=>{draft.exercises.splice(index,1);dialog.close();render();};
+ });}
+function exerciseLibrary(){const items=Object.entries(EXLIB).flatMap(([group,rows])=>rows.map(row=>({name:row[0],group,steps:row.slice(1)})));state.plan.flatMap(d=>d.exercises).forEach(e=>{if(!items.some(x=>x.name===e.name))items.push({name:e.name,group:'Eigene Übungen',steps:e.steps||[],unit:e.unit,reps:e.reps});});return items.sort((a,b)=>a.name.localeCompare(b.name,'de'));}
+function newTemplateExercise(item){const known=state.plan.flatMap(d=>d.exercises).find(e=>e.name===item.name),unit=item.unit||known?.unit||(item.group==='Cardio'?'min':/Plank|Wandsitz|Hollow Hold/.test(item.name)?'s':item.group==='Core'||/Liegestütze|Klimmzüge/.test(item.name)?'bw':'kg');return {id:uid(),name:item.name,sets:3,reps:item.reps||known?.reps||(unit==='min'?'15–20':unit==='s'?'30–45':'8–12'),unit,steps:item.steps||[]};}
+function openExercisePicker(target={}){
+ const library=exerciseLibrary(),selected=new Set(),replace=Number.isInteger(target.replace)||Number.isInteger(target.session);
+ trainingSheet(replace?'Übung ersetzen':'Übungen hinzufügen',`<div class="picker-tools"><input class="searchbar" id="templateSearch" aria-label="Übungen suchen" placeholder="Übung suchen …"><select class="sel" id="templateGroup" aria-label="Muskelgruppe"><option value="">Alle Muskelgruppen</option>${[...new Set(library.map(e=>e.group))].map(g=>`<option>${esc(g)}</option>`).join('')}</select></div><div class="picker-results">${library.map((e,i)=>`<button class="sheet-action" data-pickerex="${i}" aria-pressed="false"><b aria-hidden="true">${replace?'↔':'+'}</b><span>${esc(e.name)}<small>${esc(e.group)}</small></span></button>`).join('')}<p class="picker-empty" id="pickerEmpty" hidden>Keine passende Übung gefunden. Du kannst unten eine eigene anlegen.</p></div><div class="picker-footer">${replace?'':`<button class="btn" data-pickeradd disabled>Übungen auswählen</button>`}<button class="textbtn" data-pickercustom>+ Eigene Übung erstellen</button></div>`,dialog=>{
+ const apply=items=>{if(Number.isInteger(target.session)){const old=state.log[target.session];if(!old)return;if(old.sets.some(s=>s.done||s.weight||s.reps)&&!confirm('Diese Übung ersetzen? Ihre eingetragenen Sätze werden zurückgesetzt. Die anderen Übungen bleiben erhalten.'))return;const e=items[0];state.log[target.session]={...e,note:lastExerciseNote(e.name),sets:Array.from({length:old.sets.length},()=>({weight:'',reps:'',done:false,type:'normal'}))};setUndo=null;ensureWorkoutStarted();persistWorkout();}else if(state.templateDraft){if(Number.isInteger(target.replace))state.templateDraft.exercises[target.replace]={...items[0],id:state.templateDraft.exercises[target.replace].id,sets:state.templateDraft.exercises[target.replace].sets};else state.templateDraft.exercises.push(...items);}dialog.close();render();if(Number.isInteger(target.session))notifyUser('Übung für diese Einheit ersetzt. Deine Vorlage bleibt erhalten.');};
+ const filter=()=>{const norm=s=>s.toLocaleLowerCase('de').normalize('NFD').replace(/[\u0300-\u036f]/g,''),q=norm(dialog.querySelector('#templateSearch').value),g=dialog.querySelector('#templateGroup').value;let count=0;dialog.querySelectorAll('[data-pickerex]').forEach(b=>{const e=library[+b.dataset.pickerex];b.hidden=!(norm(e.name).includes(q)&&(!g||e.group===g));if(!b.hidden)count++;});dialog.querySelector('#pickerEmpty').hidden=count>0;};
+ dialog.querySelector('#templateSearch').oninput=filter;dialog.querySelector('#templateGroup').onchange=filter;
+ dialog.querySelectorAll('[data-pickerex]').forEach(b=>b.onclick=()=>{const i=+b.dataset.pickerex;if(replace)return apply([newTemplateExercise(library[i])]);if(selected.has(i))selected.delete(i);else selected.add(i);b.setAttribute('aria-pressed',selected.has(i));b.querySelector('b').textContent=selected.has(i)?'✓':'+';const add=dialog.querySelector('[data-pickeradd]');add.disabled=!selected.size;add.textContent=selected.size?`${selected.size} Übungen hinzufügen`:'Übungen auswählen';});
+ const add=dialog.querySelector('[data-pickeradd]');if(add)add.onclick=()=>apply([...selected].map(i=>newTemplateExercise(library[i])));
+ dialog.querySelector('[data-pickercustom]').onclick=()=>trainingSheet('Eigene Übung',`<form class="sheet-form" id="customTemplateExercise"><label>Name<input class="inp" id="customExName" maxlength="100" required placeholder="Zum Beispiel: Kabelzug eng"></label><label>Erfassung<select class="sel" id="customExUnit">${Object.entries(UNITS).map(([k,u])=>`<option value="${k}">${u.lbl}</option>`).join('')}</select></label><button class="btn" type="submit">${replace?'Übung ersetzen':'Zur Vorlage hinzufügen'}</button></form>`,sheet=>{sheet.querySelector('form').onsubmit=e=>{e.preventDefault();const name=sheet.querySelector('#customExName').value.trim();if(name)apply([newTemplateExercise({name,unit:sheet.querySelector('#customExUnit').value,steps:[]})]);};});
+ });
 }
 function goalsEditor(){const s=state.settings;return `<span class="lbl-sm">Protein-Faktor (g / kg Körpergewicht)</span><div class="stepper"><button data-prot="-1">−</button><span class="val" id="protVal">${s.protein.toFixed(1)}</span><button data-prot="1">+</button></div><span class="lbl-sm">Pausen-Timer (Sekunden)</span><div class="stepper"><button data-setrest="-1">−</button><span class="val" id="restVal">${s.rest}</span><button data-setrest="1">+</button></div>`;}
 function themeEditor(){const t=state.settings.theme;return `<div class="themebtns"><button class="btn ${t==='obsidian'?'':'btn-ghost'} btn-sm" data-settheme="obsidian">Dunkel</button><button class="btn ${t==='marmor'?'':'btn-ghost'} btn-sm" data-settheme="marmor">Hell</button></div>`;}
@@ -1628,8 +1656,8 @@ function addExerciseToDay(dayId,name,steps){dayById(dayId).exercises.push({id:ui
 
 /* ---------- Wiring ---------- */
 function wire(){
- navEl.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;state.libFor=null;state.foodPicker=false;if(b.dataset.tab==="training")state.trainView="log";render();});
- main.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{state.tab=b.dataset.go;if(b.dataset.go==="training")state.trainView="log";render();});
+ navEl.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{if(!leaveTemplate())return;state.tab=b.dataset.tab;state.libFor=null;state.foodPicker=false;if(b.dataset.tab==="training")state.trainView="log";render();});
+ main.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{if(!leaveTemplate())return;state.tab=b.dataset.go;if(b.dataset.go==="training")state.trainView="log";render();});
  // Heute
  main.querySelectorAll("[data-shift]").forEach(b=>b.onclick=()=>{const day=todayKey(),k=b.dataset.shift,sbd={...state.shiftByDate},oldPlan=state.dayPlans[day];if(sbd[day]===k)delete sbd[day];else sbd[day]=k;state.shiftByDate=sbd;save(K.shifts,sbd);state.dayPlanMsg='';render();notifyUser(oldPlan&&oldPlan.customized?'Schicht geändert. Dein angepasster Tagesplan bleibt erhalten.':'Tagesplan an die Schicht angepasst.');});
  main.querySelectorAll("[data-daydone]").forEach(b=>b.onclick=()=>{const day=todayKey(),p=ensureDayPlan(day);updateDayPlan(day,{...p,customized:true,items:p.items.map(x=>x.id===b.dataset.daydone?{...x,done:!x.done}:x)});render();});
@@ -1642,7 +1670,16 @@ function wire(){
  const back=main.querySelector('[data-workoutback]');if(back)back.onclick=()=>{state.workoutScroll=window.scrollY;state.workoutMinimized=true;render();};
  main.querySelectorAll('[data-exactions]').forEach(b=>b.onclick=()=>showExerciseActions(+b.dataset.exactions));
  const jump=main.querySelector('[data-exjump]');if(jump)jump.onclick=showExerciseJump;
- main.querySelectorAll("[data-trainview]").forEach(b=>b.onclick=()=>{state.trainView=b.dataset.trainview;state.libFor=null;render();});
+ main.querySelectorAll("[data-trainview]").forEach(b=>b.onclick=()=>{if(b.dataset.trainview!==state.trainView&&!leaveTemplate())return;state.trainView=b.dataset.trainview;state.libFor=null;render();});
+ main.querySelectorAll('[data-templateopen]').forEach(b=>b.onclick=()=>openTemplate(b.dataset.templateopen));
+ main.querySelectorAll('[data-templatemenu]').forEach(b=>b.onclick=()=>showTemplateMenu(b.dataset.templatemenu));
+ const tn=main.querySelector('[data-templatenew]');if(tn)tn.onclick=()=>openTemplate(null);
+ const tb=main.querySelector('[data-templateback]');if(tb)tb.onclick=()=>{if(leaveTemplate())render();};
+ const ts=main.querySelector('[data-templatesave]');if(ts)ts.onclick=saveTemplate;
+ const ti=document.getElementById('templateName');if(ti)ti.oninput=()=>{state.templateDraft.label=ti.value;ts.disabled=!ti.value.trim()||!state.templateDraft.exercises.length;};
+ main.querySelectorAll('[data-templateex]').forEach(b=>b.onclick=()=>showTemplateExercise(+b.dataset.templateex));
+ const ta=main.querySelector('[data-templateadd]');if(ta)ta.onclick=()=>openExercisePicker();
+ main.querySelectorAll('.exercise-card .ex-name').forEach(b=>{b.removeAttribute('data-exinfo');b.onclick=()=>showExerciseActions(+b.closest('.exercise-card').id.replace('exercise-',''));});
  main.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>switchDay(b.dataset.day));
  main.querySelectorAll('input[data-f]').forEach(inp=>inp.oninput=()=>{ensureWorkoutStarted();state.log[+inp.dataset.ei].sets[+inp.dataset.si][inp.dataset.f]=inp.value;});
  main.querySelectorAll('[data-exnote]').forEach(inp=>inp.oninput=()=>{ensureWorkoutStarted();state.log[+inp.dataset.exnote].note=inp.value;main.querySelector(`[data-notesummary="${inp.dataset.exnote}"]`).textContent=inp.value?'↳ '+inp.value:'+ Notiz hinzufügen';});
@@ -1712,7 +1749,7 @@ function wire(){
  // Plan-Assistent
  main.querySelectorAll("[data-wizfocus]").forEach(b=>b.onclick=()=>{state.wiz.focus=b.dataset.wizfocus;main.querySelectorAll("[data-wizfocus]").forEach(x=>x.classList.toggle("chip--on",x.dataset.wizfocus===state.wiz.focus));const n=document.getElementById("wizNote");if(n)n.textContent=wizNote(state.wiz.focus);});
  main.querySelectorAll("[data-wizdays]").forEach(b=>b.onclick=()=>{state.wiz.days=Math.min(4,Math.max(2,state.wiz.days+(+b.dataset.wizdays)));const v=document.getElementById("wizDaysVal");if(v)v.textContent=state.wiz.days;});
- const wm=main.querySelector("[data-wizmake]");if(wm)wm.onclick=()=>{if(!confirm("Neuen "+state.wiz.days+"-Tage-Plan erstellen? Dein aktueller Trainingsplan wird ersetzt."))return;state.plan=generatePlan(state.wiz.focus,state.wiz.days);sP();state.nextDayId=state.plan[0].id;save(K.nextDay,state.nextDayId);syncSession();state.saved=false;state.trainView="plan";render();};
+ const wm=main.querySelector("[data-wizmake]");if(wm)wm.onclick=()=>{const generated=generatePlan(state.wiz.focus,state.wiz.days);generated.forEach(d=>{const label=d.label;let n=2;while(state.plan.some(x=>x.label===d.label))d.label=`${label} (${n++})`;state.plan.push(d);});sP();render();notifyUser(generated.length+' Vorlagen hinzugefügt.');};
  // goals/theme
  main.querySelectorAll("[data-prot]").forEach(b=>b.onclick=()=>{state.settings.protein=Math.min(2.6,Math.max(1.4,+(state.settings.protein+0.1*(+b.dataset.prot)).toFixed(1)));sS();const v=document.getElementById("protVal");if(v)v.textContent=state.settings.protein.toFixed(1);});
  main.querySelectorAll("[data-setrest]").forEach(b=>b.onclick=()=>{state.settings.rest=Math.min(600,Math.max(0,state.settings.rest+15*(+b.dataset.setrest)));sS();const v=document.getElementById("restVal");if(v)v.textContent=state.settings.rest;});
@@ -1778,6 +1815,7 @@ function reloadState(){
  if(!state.plan.length)state.plan=defaultPlan();if(!state.plan.find(d=>d.id===state.nextDayId))state.nextDayId=state.plan[0].id;
  state.trainDayId=state.nextDayId;state.log=buildLog(state.nextDayId);state.saved=false;state.note="";state.startedAt=null;state.acc={};state.libFor=null;state.foodPicker=false;state.actAdding=false;
  state.workoutOpen=false;state.workoutMinimized=false;state.workoutScroll=0;
+ state.templateDraft=null;state.templateOriginal=null;
  dayUndo=null;taskEditor=null;stopRest();if(!load(K.plan,null))sP();restoreWorkout();applyTheme();render();
 }
 
