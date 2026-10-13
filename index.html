@@ -936,11 +936,11 @@ function startDaySpeech(){
  try{r.start();}catch{state.dayPlanMsg="Spracheingabe konnte nicht gestartet werden.";render();}
 }
 function dayPlanCard(){
- const day=todayKey(),plan=ensureDayPlan(day),items=sortDayItems([...plan.items]),done=items.filter(x=>x.done).length;
+ const day=todayKey(),plan=ensureDayPlan(day),items=sortDayItems(plan.items.filter(x=>!/^(Früh|Spät|Nacht)schicht\b/i.test(x.text))),done=items.filter(x=>x.done).length;
  const next=items.find(x=>!x.done),changed=shiftModeEnabled()&&plan.shift!==effShift(day);
  const rows=items.map(x=>`<div class="dayitem${x.done?' dayitem--done':''}${next===x?' dayitem--next':''}"><button class="daycheck${x.done?' daycheck--on':''}" data-daydone="${esc(x.id)}" aria-pressed="${!!x.done}" aria-label="${esc(x.text)} ${x.done?'wieder öffnen':'abhaken'}">✓</button><span class="daytime">${esc(x.time)}${x.dayOffset?'<small>+1 Tag</small>':''}</span><button class="daytext" data-taskedit="${esc(x.id)}" aria-label="${esc(x.text)} bearbeiten">${esc(x.text)}</button><button class="del" data-taskdelete="${esc(x.id)}" aria-label="${esc(x.text)} löschen">×</button></div>`).join('');
  const edit=taskEditor===null?'':taskEditorForm(items.find(x=>x.id===taskEditor));
- return `<section class="card"><div class="section-top"><div><h2>Dein Tagesplan</h2><p>${done} von ${items.length} erledigt · ${plan.customized?'Individuell angepasst':'Deine Tagesvorlage'}</p></div><button class="textbtn" data-taskadd>+ Termin</button></div><div class="day-progress" role="progressbar" aria-label="Tagesfortschritt" aria-valuenow="${done}" aria-valuemin="0" aria-valuemax="${items.length||1}"><span style="width:${items.length?done/items.length*100:0}%"></span></div>${changed?'<p class="muted sm">Deine Schicht hat sich geändert. Persönliche Termine bleiben erhalten; unter „Tagesplan anpassen“ kannst du die neue Vorlage laden.</p>':''}<div class="dayplan">${rows||'<p class="muted sm">Platz für deinen Tag. Füge einen Termin hinzu.</p>'}</div>${done===items.length&&items.length?'<p class="muted sm">Alles erledigt. Zeit zum Durchatmen.</p>':''}${edit}${dayUndo&&dayUndo.day===day?'<button class="undo-button" data-taskundo>Letzte Änderung rückgängig</button>':''}<details class="planner-help" ${state.dayPlanMsg?'open':''}><summary>Tagesplan anpassen</summary><p>Tippe einen Punkt zum Bearbeiten an oder nutze einen kurzen Befehl.</p><div class="daycmd"><input class="searchbar" id="dayPlanCommand" aria-label="Änderung am Tagesplan" placeholder="Training auf 18 Uhr verschieben"><button class="micbtn" data-dayspeak="1" aria-label="Änderung sprechen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6"/></svg></button></div><div class="command-examples"><button data-example="Training auf 18 Uhr verschieben">Training verschieben</button><button data-example="Einkaufen um 17 Uhr hinzufügen">Termin hinzufügen</button></div><button class="btn btn-sm" style="margin-top:12px" data-dayapply="1">Änderung übernehmen</button><div class="daymsg" id="dayPlanMsg" role="status">${esc(state.dayPlanMsg||'Kurze Befehle werden direkt auf deinem Gerät verarbeitet.')}</div><p>Beim Sprechen kann dein Browser einen Onlinedienst verwenden. Der erkannte Text wird erst nach deiner Bestätigung übernommen.</p><button class="textbtn" data-dayreset="1">Tagesvorlage neu laden</button></details></section>`;
+ return `<section class="card"><div class="section-top"><div><h2>Dein Tagesplan</h2><p>${done} von ${items.length} erledigt · ${plan.customized?'Individuell angepasst':'Deine Tagesvorlage'}</p></div><button class="textbtn" data-taskadd>+ Termin</button></div><div class="day-progress" role="progressbar" aria-label="Tagesfortschritt" aria-valuenow="${done}" aria-valuemin="0" aria-valuemax="${items.length||1}"><span style="width:${items.length?done/items.length*100:0}%"></span></div>${changed?'<p class="muted sm">Deine Tagesvorlage hat sich geändert. Persönliche Termine bleiben erhalten; unter „Tagesplan anpassen“ kannst du die neue Vorlage laden.</p>':''}<div class="dayplan">${rows||'<p class="muted sm">Platz für deinen Tag. Füge einen Termin hinzu.</p>'}</div>${done===items.length&&items.length?'<p class="muted sm">Alles erledigt. Zeit zum Durchatmen.</p>':''}${edit}${dayUndo&&dayUndo.day===day?'<button class="undo-button" data-taskundo>Letzte Änderung rückgängig</button>':''}<details class="planner-help" ${state.dayPlanMsg?'open':''}><summary>Tagesplan anpassen</summary><p>Tippe einen Punkt zum Bearbeiten an oder nutze einen kurzen Befehl.</p><div class="daycmd"><input class="searchbar" id="dayPlanCommand" aria-label="Änderung am Tagesplan" placeholder="Training auf 18 Uhr verschieben"><button class="micbtn" data-dayspeak="1" aria-label="Änderung sprechen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6"/></svg></button></div><div class="command-examples"><button data-example="Training auf 18 Uhr verschieben">Training verschieben</button><button data-example="Einkaufen um 17 Uhr hinzufügen">Termin hinzufügen</button></div><button class="btn btn-sm" style="margin-top:12px" data-dayapply="1">Änderung übernehmen</button><div class="daymsg" id="dayPlanMsg" role="status">${esc(state.dayPlanMsg||'Kurze Befehle werden direkt auf deinem Gerät verarbeitet.')}</div><p>Beim Sprechen kann dein Browser einen Onlinedienst verwenden. Der erkannte Text wird erst nach deiner Bestätigung übernommen.</p><button class="textbtn" data-dayreset="1">Tagesvorlage neu laden</button></details></section>`;
 }
 
 /* Small improvements shared across screens. No new runtime dependencies. */
@@ -951,7 +951,7 @@ function pageHeading(){
  const titles={heute:['Dein Tag. Dein Tempo.','Training, Essen und Alltag in deinem Rhythmus.'],training:['Stärker. Schritt für Schritt.','Deine nächste Wiederholung zählt.'],essen:['Gut versorgt.','Mahlzeiten, Wasser und dein Überblick.'],gewicht:['Dein Fortschritt.','Einzelne Werte schwanken. Der Verlauf zählt.'],mehr:['So passt es zu dir.','Deine Ziele, dein Rhythmus, deine Daten.']};
  const [title,sub]=titles[state.tab];
  const date=new Date().toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'});
- return `<div class="page-heading"><div class="date-line"><span>${esc(date)}</span><span class="status-pill">${navigator.onLine?'Hermes 2':'Offline'}</span></div><h1>${title}</h1><p>${sub}</p></div>`;
+ return `<div class="page-heading"><div class="date-line"><span>${esc(date)}</span><span class="status-pill">${navigator.onLine?'Hermes 2.2':'Offline'}</span></div><h1>${title}</h1><p>${sub}</p></div>`;
 }
 function taskEditorForm(item){return `<form id="taskForm" class="inline-form"><label>Was steht an?<input id="taskTitle" class="inp" style="text-align:left" required maxlength="100" value="${esc(item?.text||'')}" placeholder="Zum Beispiel: Einkaufen"></label><div class="form-pair"><label>Uhrzeit<input id="taskTime" class="inp" type="time" required value="${esc(item?.time||'17:00')}"></label><label>Tag<select id="taskOffset" class="sel"><option value="0">Heute</option><option value="1" ${item?.dayOffset?'selected':''}>Folgetag (nach Mitternacht)</option></select></label></div><div class="form-actions"><button type="button" class="btn btn-ghost btn-sm" data-taskcancel>Abbrechen</button><button class="btn btn-sm" type="submit">Speichern</button></div></form>`;}
 function wireUpgrade(){
@@ -1030,31 +1030,12 @@ function viewActivityPicker(){
 }
 function viewHeute(){
  if(state.actAdding)return viewActivityPicker();
- const ts=effShift(todayKey());
- const fromRota=shiftModeEnabled()&&!state.shiftByDate[todayKey()]&&!!rotaShift(todayKey());
  const wk=new Date();wk.setDate(wk.getDate()-6);
  const sess=state.history.filter(h=>new Date(h.date)>=wk).length;
  const kg=latestKg(),nd=dayById(state.nextDayId),tg=targets(),con=consumedToday();
- const chips=Object.entries(SHIFTS).map(([k,v])=>`<button class="chip${ts===k?' chip--on':''}" data-shift="${k}">${v.label}</button>`).join("");
- let preview="";
- if(shiftModeEnabled()&&rotaShift(todayKey())){
-  const days=[];const wd=["So","Mo","Di","Mi","Do","Fr","Sa"];
-  const sh={frueh:"F",spaet:"S",nacht:"N",frei:"–"};
-  for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()+i);const key=dateKey(d);const s=effShift(key);days.push(`<div class="rotaday${i===0?' rotaday--today':''}"><span class="rd-wd">${i===0?"Heute":wd[d.getDay()]}</span><span class="rd-s">${s?sh[s]:"—"}</span></div>`);}
-  preview=`<div class="rotaprev">${days.join("")}</div><p class="muted sm" style="margin:8px 0 0">F Früh · S Spät · N Nacht · – Frei. ${fromRota?"Automatisch aus deinem Schichtrhythmus — Tipp auf eine Schicht überschreibt nur heute.":"Heute manuell gewählt — erneut antippen, dann gilt wieder der Rhythmus."}</p>`;
- }else if(shiftModeEnabled()&&!ts)preview=`<p class="muted sm" style="margin:10px 0 0">Unter „Mehr" → „Schichtplan“ kannst du einen Rhythmus hinterlegen oder hier nur die heutige Schicht wählen.</p>`;
- let hero;
- if(ts){const s=SHIFTS[ts];
-  const restNight=isRestAfterNight(todayKey());
-  const when=restNight?"Erholung geht heute vor.":s.when;
-  const note=restNight?"Erster freier Tag nach dem Nacht-Block — der gehört dem Schlaf.":s.note;
-  const body=restNight?`<div class="hero-rest">Heute kein Training. Schlaf nach, iss gut und tank auf — morgen greifst du wieder voll an.</div>`:(s.train?`<button class="btn" data-go="training">${esc(nd.label)} starten</button>`:`<div class="hero-rest">Heute leicht halten.</div>`);
-  hero=`<section class="card hero"><div class="eyebrow">Dein Fokus heute · ${s.label}${ts==='frei'?'':'schicht'}</div><div class="hero-tag">${restNight?'Raum für Erholung.':s.train?'Zeit für dich.':'In deinem Tempo.'}</div><div class="hero-when">${when}</div><p class="hero-note">${note}</p>${body}</section>`;}
- else {
-  const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
-  const trainedToday=state.history.some(h=>dateKey(new Date(h.date))===todayKey()),rest=state.history.some(h=>dateKey(new Date(h.date))===dateKey(yesterday));
-  hero=`<section class="card hero"><div class="eyebrow">Dein Fokus heute</div><div class="hero-tag">${trainedToday?'Training erledigt.':rest?'Raum für Erholung.':'Zeit für dich.'}</div><div class="hero-when">${trainedToday?'Bewegung, Essen und Erholung in Balance.':rest?'Gestern trainiert — heute Zeit zum Auftanken.':`Deine nächste Einheit: ${esc(nd.label)}.`}</div><p class="hero-note">${trainedToday||rest?'Ein Spaziergang, regelmäßige Mahlzeiten und Zeit für dich passen gut in deinen Tag.':'Plane dein Training, iss regelmäßig und lass Raum für deine eigenen Vorhaben.'}</p><button class="btn" data-go="training">${trainedToday||rest?'Training öffnen':esc(nd.label)+' starten'}</button></section>`;
- }
+ const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+ const trainedToday=state.history.some(h=>dateKey(new Date(h.date))===todayKey()),rest=state.history.some(h=>dateKey(new Date(h.date))===dateKey(yesterday));
+ const hero=`<section class="card hero"><div class="eyebrow">Dein Fokus heute</div><div class="hero-tag">${trainedToday?'Training erledigt.':rest?'Raum für Erholung.':'Zeit für dich.'}</div><div class="hero-when">${trainedToday?'Bewegung, Essen und Erholung in Balance.':rest?'Gestern trainiert — heute Zeit zum Auftanken.':`Deine nächste Einheit: ${esc(nd.label)}.`}</div><p class="hero-note">${trainedToday||rest?'Ein Spaziergang, regelmäßige Mahlzeiten und Zeit für dich passen gut in deinen Tag.':'Plane dein Training, iss regelmäßig und lass Raum für deine eigenen Vorhaben.'}</p><button class="btn" data-go="training">${trainedToday||rest?'Training öffnen':esc(nd.label)+' starten'}</button></section>`;
  return `<div class="stack">
   ${hero}
   <div class="quick-actions"><button data-quickmeal>${NAVICONS.essen}Essen eintragen</button><button data-go="training">${NAVICONS.training}Training öffnen</button><button data-actadd="1">${NAVICONS.heute}Aktivität erfassen</button></div>
@@ -1066,7 +1047,6 @@ function viewHeute(){
    <section class="card stat"><div class="stat-num" style="font-size:26px">${kg??"—"}${kg?'<span class="u">kg</span>':''}</div><div class="stat-lbl">aktuelles<br>Gewicht</div></section>
    <section class="card stat"><div class="stat-num" style="font-size:26px">${foodStreak()}</div><div class="stat-lbl">Tage Essen<br>getrackt</div></section>
   </div>
-  ${shiftModeEnabled()?`<section class="card"><div class="eyebrow">Schicht heute</div><div class="shiftrow">${chips}</div>${preview}</section>`:''}
  </div>`;
 }
 
@@ -1518,15 +1498,21 @@ function viewMehr(){
   <section class="card"><div class="section-top"><div><h2>Tagesplanung</h2><p>Dein Alltag, dein Tempo.</p></div></div><div class="between"><b>Schichtmodus</b><button class="chip${shiftModeEnabled()?' chip--on':''}" role="switch" aria-label="Schichtmodus" aria-checked="${shiftModeEnabled()}" data-shiftmode>${shiftModeEnabled()?'Ein':'Aus'}</button></div><p class="muted sm" style="margin-bottom:0">${shiftModeEnabled()?'Dein Tagesplan berücksichtigt Früh-, Spät- und Nachtschichten.':'Dein Tagesplan konzentriert sich auf Training, Essen, Bewegung und eigene Vorhaben.'}</p></section>
   ${acc("theme","Darstellung",themeEditor())}
   ${acc("profile","Profil & Ziel",profileEditor())}
+  ${shiftModeEnabled()?shiftTodaySettings():''}
   ${shiftModeEnabled()?acc("rota","Schichtplan (Rhythmus)",rotaEditor()):''}
   ${acc("goals","Feineinstellungen: Protein & Pause",goalsEditor())}
   ${acc("data","Daten sichern",dataEditor())}
  </div>`;
 }
+function shiftTodaySettings(){
+ const day=todayKey(),shift=effShift(day),chips=Object.entries(SHIFTS).map(([k,v])=>`<button class="chip${shift===k?' chip--on':''}" data-shift="${k}">${v.label}</button>`).join('');
+ const preview=rotaShift(day)?Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()+i);const s=effShift(dateKey(d));return `<div class="rotaday${i===0?' rotaday--today':''}"><span class="rd-wd">${i===0?'Heute':d.toLocaleDateString('de-DE',{weekday:'short'})}</span><span class="rd-s">${s?SHIFTS[s]?.label||'—':'—'}</span></div>`;}).join(''):'';
+ return `<section class="card"><div class="eyebrow">Schicht heute</div><div class="shiftrow">${chips}</div>${preview?`<div class="rotaprev">${preview}</div>`:''}<p class="muted sm" style="margin-bottom:0">Die Auswahl passt die Zeiten deiner Tagesvorlage an. Erneut antippen, um zur automatischen Auswahl zurückzukehren.</p></section>`;
+}
 function rotaEditor(){
  const r=state.rota,order=["frueh","spaet","nacht","frei"];
  const seq=r.seq.map((s,i)=>`<button class="rotachip" data-rotacycle="${i}"><span class="rc-n">${i+1}</span>${SHIFTS[s]?SHIFTS[s].label:"?"}</button>`).join("");
- return `<p class="muted sm" style="margin-top:0">Dein wiederkehrender Schichtzyklus. Tag antippen = Schicht wechseln (Früh → Spät → Nacht → Frei). „Heute" wählt die Schicht dann automatisch.</p>
+ return `<p class="muted sm" style="margin-top:0">Dein wiederkehrender Schichtzyklus. Tag antippen = Schicht wechseln (Früh → Spät → Nacht → Frei). Deine Tagesvorlage passt sich dann automatisch an.</p>
   <span class="lbl-sm">Zyklus-Start (Tag 1 deines Rhythmus)</span>
   <input class="inp" type="date" id="rotaStart" value="${esc(r.start||"")}" style="text-align:left;max-width:200px">
   <span class="lbl-sm">Zyklus (${r.seq.length} Tage)</span>
@@ -1753,7 +1739,7 @@ function buildIcon(size){const c=document.createElement("canvas");c.width=c.heig
 try{document.getElementById("appleicon").href=buildIcon(192);}catch(e){console.warn(e);}
 
 /* Service Worker für Offline-Nutzung registrieren. */
-if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(e=>console.warn("SW:",e));});}
+if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js",{updateViaCache:'none'}).catch(e=>console.warn("SW:",e));});}
 
 const exmodalEl=document.getElementById("exmodal");
 exmodalEl.onclick=e=>{if(e.target===exmodalEl)closeExInfo();};

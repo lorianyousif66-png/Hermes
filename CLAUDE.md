@@ -53,7 +53,10 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 - Schichtmodus ist standardmäßig aus, auch bei alten Einstellungen ohne `shiftMode`.
   Unter Mehr → Tagesplanung lässt er sich aktivieren. `effShift` ignoriert gespeicherte Schichten,
   solange der Modus aus ist; Heute zeigt dann normale Tagesplanung und Training/Erholung.
-  Schichtauswahl und Rhythmus-Editor erscheinen nur bei aktivem Modus. Gespeicherte Schichtdaten bleiben erhalten.
+  Schichtauswahl, Wochenvorschau und Rhythmus-Editor erscheinen nur unter Mehr bei aktivem Modus.
+  Heute bleibt in beiden Modi neutral: keine Schichtkarte, keine schichtbezogenen Fokus-Texte und keine
+  automatisch vorgegebenen Arbeitsblöcke. Alte Schicht-Einträge werden im sichtbaren Tagesplan ausgelassen,
+  ohne gespeicherte Termine zu löschen. Gespeicherte Schichtdaten bleiben erhalten.
   Tagespläne speichern `mode` und `savedModes`: Beim Wechsel wird der bisherige Plan aufgehoben,
   persönliche Termine werden in eine neue Vorlage übernommen; Rückwechsel stellt den anderen Plan wieder her.
   `source: template/custom` unterscheidet künftig automatisch erzeugte von selbst bearbeiteten Punkten.
@@ -83,7 +86,8 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 - Lebensmittelauswahl: zuletzt verwendete Einträge priorisieren, 12 Ergebnisse zunächst anzeigen,
   Suchfilter und leere Treffer erklären; Einzelzutaten mit kurzem Status statt Overlay bestätigen.
 - Backups werden vollständig validiert, bevor Daten geschrieben werden. Die Gewichtskurve verwendet
-  tatsächliche Datumsabstände. Service Worker v6 überschreibt die Offline-App nicht mit HTTP-Fehlerseiten.
+  tatsächliche Datumsabstände. Service Worker v7 überschreibt die Offline-App nicht mit HTTP-Fehlerseiten
+  und validiert die App-Seite bei Online-Aufrufen neu, damit alte HTTP-Caches kein Update verdecken.
 - Browser-Regressionsprüfung außerhalb des Repositories: beide Themes, 320/390/560/1024 px,
   alle Tabs und Unteransichten, Tagesplan/Undo, Entwurfswiederherstellung, Import, Tageswechsel und Offline.
 
@@ -113,8 +117,9 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 - `heute` — **oben Übersicht** (`ovrCard`): Kalorien-Ring + „Gegessen"/„Verbraucht"
   daneben, Buttons „+ Aktivität" / „Essen". Darunter Trainings-Empfehlung, Mini-Stats
-  (inkl. Essens-Serie `foodStreak()`), optional die Schicht-Auswahl. 1. freier Tag nach
-  Nachtschicht (`isRestAfterNight`, `prevShift`) → Schlaf-Empfehlung statt Trainings-Button.
+  (inkl. Essens-Serie `foodStreak()`). Die Fokus-Karte richtet sich nur nach Training/Erholung.
+  Schichtbedienung gehört ausschließlich in die Einstellungen; bei aktiviertem Modus kann
+  `isRestAfterNight` weiterhin die Uhrzeiten der Tagesvorlage anpassen.
   „+ Aktivität" öffnet den Aktivitäten-Picker (`viewActivityPicker`, `state.actAdding`):
   Aktivität + Dauer → geschätzter Kalorienverbrauch (`ACTS` MET-Werte, `actKcal`),
   Tagesverbrauch via `burnedToday()`.
@@ -193,7 +198,7 @@ hermes:dayplans  automatisch erzeugte Tagespläne je Datum inkl. manueller Ände
   (Tag antippen = Schicht durchwechseln, Vorlage 2-2-2-2). „Heute" nutzt `effShift`
   (manuelle Wahl in `hermes:shifts` überschreibt tagesweise; erneutes Antippen des aktiven
   Chips löscht den Override). Rhythmus-Änderungen entfernen Overrides ab heute
-  (`rotaApplied`). 7-Tage-Vorschau im Heute-Tab.
+  (`rotaApplied`). Auswahl und 7-Tage-Vorschau unter Mehr, nicht im Heute-Tab.
 - `dateKey(d)` / `todayKey()` — Datums-Schlüssel in LOKALER Zeit (nicht UTC/ISO)!
   Wichtig für Nachtschicht um Mitternacht. Nie durch `toISOString().slice(0,10)` ersetzen.
 - `openExInfo(name)` / `bodySVG()` / `MUSCLE_MAP` / `findExMeta()` — Übungs-Info-Fenster
