@@ -42,6 +42,29 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 ## Wie testen
 
+### Hermes 3 (Oktober 2026)
+
+- Beide Farbpaletten unverändert. Kürzere Seitenüberschriften, ruhigere Flächen,
+  einheitliche Navigation und Bedienelemente. Ernährung: Trends/Mikronährstoffe
+  aufklappbar; Plan-Assistent ebenfalls. `render` erhält geöffnete `data-disclosure`
+  bei Änderungen in derselben Ansicht.
+- Training startet mit Workout-Karten (`trainingHome`). `data-begin` öffnet und startet
+  die gewählte Einheit; ein vorhandener Entwurf wird fortgesetzt. Wechsel zu einem
+  anderen Workout erfordert weiterhin die bestehende Verwerfen-Bestätigung.
+- `workoutFocused` blendet während der Einheit App-Kopf und Hauptnavigation aus.
+  Die angeheftete Leiste enthält Minimieren, Dauer/Übungsauswahl und Beenden.
+  Minimieren erhält den Entwurf und die Scrollposition; Fortsetzen stellt sie wieder her.
+  `workoutOpen`, `workoutMinimized`, `workoutScroll` sind nur UI-Zustand.
+- Übungskarten zeigen kompakte Sätze, vorherige Werte und einklappbare Notizen.
+  Optionen (···) öffnen ein natives Dialog-Bottom-Sheet mit Anleitung, Verlauf,
+  Notiz und Satzentfernung. N/F/W/D öffnet eine direkte Satztyp-Auswahl statt Durchschalten.
+  Swipe/Undo, Dauer, Rekorde, Entwürfe und alle Speicherformate bleiben erhalten.
+- Pausentimer aktualisiert nur Text/Balken: Buttons werden bei Ticks nicht ersetzt,
+  damit Tastaturfokus und Klicks erhalten bleiben. Offline-Shell: Service Worker v8.
+- Browserprüfung außerhalb des Repos: `test-redesign.cjs`, `test-swipes.cjs`,
+  `test-hermes.cjs`: Start/Minimieren/Fortsetzen, Navigation, Dialoge, Speicherung,
+  echte Touch-Swipes, alle Tabs, beide Themes, 320/390/560/1024 px und Offline.
+
 ### Hermes 2 (September 2026)
 
 - Beide ursprünglichen Farbpaletten bleiben unverändert. Neue Gestaltung: Seitenüberschriften,
@@ -124,8 +147,8 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
   Aktivität + Dauer → geschätzter Kalorienverbrauch (`ACTS` MET-Werte, `actKcal`),
   Tagesverbrauch via `burnedToday()`.
 - `training` — Unternavigation (`state.trainView`: `log` | `plan` | `hist`, via `trainNav()`):
-  - **Einheit** (`log`): Session-Logging (Sätze: Gewicht/Wdh./erledigt), Tag-Wechsel,
-    Pausen-Timer, Notizfeld, Übungs-Anleitungen (`<details>`).
+  - **Workouts** (`log`): Workout-Karten, danach fokussiertes Session-Logging
+    (Sätze: Gewicht/Wdh./erledigt), Pausen-Timer, Notizen, Übungsoptionen als Bottom-Sheet.
   - **Plan** (`plan`): **Plan-Assistent** (`wizEditor`, generiert Plan nach Ziel + Tagen)
     + **Plan bearbeiten** (`planEditor`, inkl. Übungs-Bibliothek `viewLibrary`).
   - **Verlauf** (`hist`): Trainings-Historie (`histEditor`).
