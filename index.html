@@ -479,7 +479,7 @@ const EXLIB={
  ["Seilspringen","Handgelenke drehen, kleine Sprünge.","Gleichmäßiger Rhythmus.","Intervalle von 1–2 Min."],
  ["HIIT-Intervalle","30 Sek. hohes Tempo (Sprint/Rad).","90 Sek. locker erholen.","6–10 Runden."],
  ["Schwimmen","Bahnen in ruhigem Tempo.","Technik vor Geschwindigkeit.","15–30 Min."],
- ["Spazieren (zügig)","Zügiges Tempo, aufrecht.","30–60 Min — auch nach der Schicht gut.","Regeneration + Kalorienverbrauch."],
+ ["Spazieren (zügig)","Zügiges Tempo, aufrecht.","30–60 Min — gut in deinen Alltag integrierbar.","Regeneration + Kalorienverbrauch."],
 ],
 "Mobility / Dehnen":[
  ["Katze-Kuh","Vierfüßlerstand.","Rücken abwechselnd rund und ins Hohlkreuz.","Langsam mit der Atmung."],
@@ -678,7 +678,9 @@ function rotaShift(dateStr){
  const n=r.seq.length,i=((d%n)+n)%n;
  return r.seq[i];
 }
-function effShift(dateStr){return state.shiftByDate[dateStr]||rotaShift(dateStr)||null;}
+function shiftModeEnabled(){return state.settings.shiftMode===true;}
+function planningMode(){return shiftModeEnabled()?'shift':'daily';}
+function effShift(dateStr){return shiftModeEnabled()?(state.shiftByDate[dateStr]||rotaShift(dateStr)||null):null;}
 /* Schicht des Vortags (in LOKALER Zeit) — für „1. Tag nach Nacht = Schlaf". */
 function prevShift(dateStr){const [y,m,d]=dateStr.split("-").map(Number);const pd=new Date(y,m-1,d-1);return effShift(dateKey(pd));}
 /* Erster freier Tag direkt nach einem Nacht-Block: heute frei, gestern Nacht. */
@@ -748,7 +750,7 @@ const SET_TYPES=[['normal','N','Normal'],['failure','F','Muskelversagen'],['warm
 const state={
  tab:"heute",
  plan:load(K.plan,defaultPlan()),
- settings:Object.assign({theme:"obsidian",rest:90,protein:1.9},load(K.settings,{})),
+ settings:Object.assign({theme:"obsidian",rest:90,protein:1.9,shiftMode:false},load(K.settings,{})),
  profile:Object.assign({sex:"m",age:30,height:180,activity:1.375,goal:"abnehmen"},load(K.profile,{})),
  bodyweight:load(K.weight,[]),history:load(K.history,[]),lastBest:load(K.last,{}),prs:load(K.pr,{}),lastPRs:[],
  nextDayId:load(K.nextDay,null),shiftByDate:load(K.shifts,{}),rota:load(K.rota,{start:"",seq:[]}),
@@ -839,34 +841,47 @@ function bar(label,cons,tgt,unit,over){
 }
 
 /* ---------- Automatischer Tagesplan ----------
-   Jeder Kalendertag wird beim ersten Öffnen einmal aus der effektiven Schicht erzeugt.
+   Jeder Kalendertag wird beim ersten Öffnen aus dem Alltag, optional aus der Schicht erzeugt.
    Danach bleibt er stabil, damit manuelle Änderungen nicht überschrieben werden. */
 function dayPlanTemplate(shift,day=todayKey()){
+ shift=shiftModeEnabled()?shift:null;
  const next=dayById(state.nextDayId),train=next?next.label:"Training";
  const templates={
   frueh:[["05:00","Aufstehen & Wasser"],["05:30","Frühstück"],["06:00","Frühschicht"],["15:30",train+" – Training"],["17:30","Hauptmahlzeit"],["21:30","Schlaf vorbereiten"]],
   spaet:[["08:00","Aufstehen & Wasser"],["08:30","Frühstück"],["10:00",train+" – Training"],["12:00","Hauptmahlzeit"],["14:00","Spätschicht"],["23:00","Schlaf vorbereiten"]],
   nacht:[["13:00","Aufstehen & Wasser"],["13:30","Erste Mahlzeit"],["17:00","Spaziergang oder Mobility"],["19:00","Hauptmahlzeit"],["22:00","Nachtschicht"],["07:30","Schlafen"]],
   frei:[["08:00","Aufstehen & Wasser"],["08:30","Frühstück"],["10:00",train+" – Training"],["13:00","Hauptmahlzeit"],["18:00","Tagesvorbereitung"],["23:00","Schlafen"]],
-  none:[["08:00","Aufstehen & Wasser"],["08:30","Frühstück"],["12:30","Hauptmahlzeit"],["18:00","Bewegung"],["22:30","Schlaf vorbereiten"]],
+  none:[["08:00","Aufstehen & Wasser"],["08:30","Frühstück"],["10:00",train+" – Training"],["12:30","Hauptmahlzeit"],["15:00","Zeit für eigene Vorhaben"],["18:00","Spaziergang / Bewegung"],["22:30","Schlaf vorbereiten"]],
  };
  let entries=templates[shift||"none"]||templates.none;
  if(isRestAfterNight(day))entries=[["07:30","Schlafen & erholen"],["15:00","In Ruhe aufstehen"],["15:30","Erste Mahlzeit"],["17:00","Zeit für dich"],["19:00","Hauptmahlzeit"],["22:30","Schlaf vorbereiten"]];
  const trainedYesterday=state.history.some(h=>dateKey(new Date(h.date))===dateKey(new Date(new Date(day+'T12:00:00').setDate(new Date(day+'T12:00:00').getDate()-1))));
- return entries.map(([time,text])=>({id:uid(),time,text:trainedYesterday&&text.includes(' – Training')?'Erholung / freie Zeit':text,done:false,dayOffset:shift==='nacht'&&time==='07:30'?1:0}));
+ return entries.map(([time,text])=>({id:uid(),time,text:trainedYesterday&&text.includes(' – Training')?'Erholung / freie Zeit':text,done:false,source:'template',dayOffset:shift==='nacht'&&time==='07:30'?1:0}));
 }
 function saveDayPlans(){save(K.dayPlans,state.dayPlans);}
+function personalDayItems(plan){
+ if(!plan.customized)return [];
+ const routine=['Aufstehen & Wasser','Frühstück','Hauptmahlzeit','Schlaf vorbereiten','Erste Mahlzeit','Spaziergang oder Mobility','Schlafen','Tagesvorbereitung','Bewegung','Schlafen & erholen','In Ruhe aufstehen','Zeit für dich','Erholung / freie Zeit','Zeit für eigene Vorhaben','Spaziergang / Bewegung'];
+ return plan.items.filter(x=>!['Frühschicht','Spätschicht','Nachtschicht'].includes(x.text)&&(x.source==='custom'||(!x.source&&!routine.includes(x.text)&&!x.text.endsWith(' – Training'))));
+}
 function ensureDayPlan(day){
- const old=state.dayPlans[day];
+ let old=state.dayPlans[day];const mode=planningMode(),shift=effShift(day);
+ if(old&&(old.mode||'shift')!==mode){
+  // Keep each mode's edited plan so toggling never loses its appointments or progress.
+  const {savedModes={},...previous}=old,variants={...savedModes,[old.mode||'shift']:previous},remembered=variants[mode];delete variants[mode];
+  const personal=personalDayItems(old),base=dayPlanTemplate(shift,day).map(x=>({...x,done:!!old.items.find(p=>p.text===x.text)?.done})),items=sortDayItems([...base.filter(x=>!personal.some(p=>p.text===x.text)),...personal]);
+  old={...(remembered||{shift,customized:personal.length>0,items}),mode,savedModes:variants};state.dayPlans={...state.dayPlans,[day]:old};saveDayPlans();
+ }
  if(old&&old.shift==='nacht'&&old.items.some(x=>x.dayOffset===undefined)){old.items=old.items.map(x=>({...x,dayOffset:x.dayOffset===undefined&&x.time==='07:30'&&x.text==='Schlafen'?1:(x.dayOffset||0)}));saveDayPlans();}
- if(old&&!old.customized&&old.shift!==(effShift(day)||null))delete state.dayPlans[day];
+ if(old&&!old.customized&&old.shift!==shift)delete state.dayPlans[day];
  if(!state.dayPlans[day]){
-  state.dayPlans={...state.dayPlans,[day]:{shift:effShift(day)||null,customized:false,items:dayPlanTemplate(effShift(day),day)}};
+  state.dayPlans={...state.dayPlans,[day]:{shift,mode,savedModes:old?.savedModes||{},customized:false,items:dayPlanTemplate(shift,day)}};
   saveDayPlans();
  }
  return state.dayPlans[day];
 }
 function updateDayPlan(day,plan){dayUndo={day,plan:JSON.parse(JSON.stringify(state.dayPlans[day]))};state.dayPlans={...state.dayPlans,[day]:plan};saveDayPlans();}
+function setShiftMode(enabled){state.settings.shiftMode=enabled;sS();taskEditor=null;dayUndo=null;state.dayPlanMsg='';ensureDayPlan(todayKey());render();notifyUser(enabled?'Schichtmodus aktiviert.':'Schichtmodus ausgeschaltet. Dein Alltag steht im Fokus.');}
 function timeValue(t){const m=String(t||"").match(/^(\d{1,2}):(\d{2})$/);return m?(+m[1])*60+(+m[2]):9999;}
 function sortDayItems(items){return items.sort((a,b)=>(a.dayOffset||0)*1440+timeValue(a.time)-(b.dayOffset||0)*1440-timeValue(b.time));}
 function extractTime(txt){
@@ -902,9 +917,9 @@ function applyDayCommand(raw){
   items=items.map(x=>x.id===hit.id?{...x,done:true}:x);state.dayPlanMsg="„"+hit.text+"“ ist erledigt.";
  }else if((move||(!add&&hit))&&tm){
   if(!hit){state.dayPlanMsg="Ich finde „"+(subject||"diesen Punkt")+"“ nicht im Tagesplan.";return false;}
-  items=items.map(x=>x.id===hit.id?{...x,time:tm.value}:x);sortDayItems(items);state.dayPlanMsg="„"+hit.text+"“ ist jetzt um "+tm.value+" Uhr.";
+  items=items.map(x=>x.id===hit.id?{...x,time:tm.value,source:'custom'}:x);sortDayItems(items);state.dayPlanMsg="„"+hit.text+"“ ist jetzt um "+tm.value+" Uhr.";
  }else if(tm&&subject&&(add||!plan.items.some(x=>x.text.toLowerCase().includes(subject.toLowerCase())))){
-  items.push({id:uid(),time:tm.value,text:subject.charAt(0).toUpperCase()+subject.slice(1),done:false});sortDayItems(items);state.dayPlanMsg="„"+subject+"“ wurde um "+tm.value+" Uhr eingeplant.";
+  items.push({id:uid(),time:tm.value,text:subject.charAt(0).toUpperCase()+subject.slice(1),done:false,source:'custom'});sortDayItems(items);state.dayPlanMsg="„"+subject+"“ wurde um "+tm.value+" Uhr eingeplant.";
  }else{
   state.dayPlanMsg="Das habe ich nicht verstanden. Beispiel: „Training auf 18 Uhr verschieben“ oder „Arzt um 10:30 hinzufügen“.";return false;
  }
@@ -922,7 +937,7 @@ function startDaySpeech(){
 }
 function dayPlanCard(){
  const day=todayKey(),plan=ensureDayPlan(day),items=sortDayItems([...plan.items]),done=items.filter(x=>x.done).length;
- const next=items.find(x=>!x.done),changed=plan.shift!==effShift(day);
+ const next=items.find(x=>!x.done),changed=shiftModeEnabled()&&plan.shift!==effShift(day);
  const rows=items.map(x=>`<div class="dayitem${x.done?' dayitem--done':''}${next===x?' dayitem--next':''}"><button class="daycheck${x.done?' daycheck--on':''}" data-daydone="${esc(x.id)}" aria-pressed="${!!x.done}" aria-label="${esc(x.text)} ${x.done?'wieder öffnen':'abhaken'}">✓</button><span class="daytime">${esc(x.time)}${x.dayOffset?'<small>+1 Tag</small>':''}</span><button class="daytext" data-taskedit="${esc(x.id)}" aria-label="${esc(x.text)} bearbeiten">${esc(x.text)}</button><button class="del" data-taskdelete="${esc(x.id)}" aria-label="${esc(x.text)} löschen">×</button></div>`).join('');
  const edit=taskEditor===null?'':taskEditorForm(items.find(x=>x.id===taskEditor));
  return `<section class="card"><div class="section-top"><div><h2>Dein Tagesplan</h2><p>${done} von ${items.length} erledigt · ${plan.customized?'Individuell angepasst':'Deine Tagesvorlage'}</p></div><button class="textbtn" data-taskadd>+ Termin</button></div><div class="day-progress" role="progressbar" aria-label="Tagesfortschritt" aria-valuenow="${done}" aria-valuemin="0" aria-valuemax="${items.length||1}"><span style="width:${items.length?done/items.length*100:0}%"></span></div>${changed?'<p class="muted sm">Deine Schicht hat sich geändert. Persönliche Termine bleiben erhalten; unter „Tagesplan anpassen“ kannst du die neue Vorlage laden.</p>':''}<div class="dayplan">${rows||'<p class="muted sm">Platz für deinen Tag. Füge einen Termin hinzu.</p>'}</div>${done===items.length&&items.length?'<p class="muted sm">Alles erledigt. Zeit zum Durchatmen.</p>':''}${edit}${dayUndo&&dayUndo.day===day?'<button class="undo-button" data-taskundo>Letzte Änderung rückgängig</button>':''}<details class="planner-help" ${state.dayPlanMsg?'open':''}><summary>Tagesplan anpassen</summary><p>Tippe einen Punkt zum Bearbeiten an oder nutze einen kurzen Befehl.</p><div class="daycmd"><input class="searchbar" id="dayPlanCommand" aria-label="Änderung am Tagesplan" placeholder="Training auf 18 Uhr verschieben"><button class="micbtn" data-dayspeak="1" aria-label="Änderung sprechen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6"/></svg></button></div><div class="command-examples"><button data-example="Training auf 18 Uhr verschieben">Training verschieben</button><button data-example="Einkaufen um 17 Uhr hinzufügen">Termin hinzufügen</button></div><button class="btn btn-sm" style="margin-top:12px" data-dayapply="1">Änderung übernehmen</button><div class="daymsg" id="dayPlanMsg" role="status">${esc(state.dayPlanMsg||'Kurze Befehle werden direkt auf deinem Gerät verarbeitet.')}</div><p>Beim Sprechen kann dein Browser einen Onlinedienst verwenden. Der erkannte Text wird erst nach deiner Bestätigung übernommen.</p><button class="textbtn" data-dayreset="1">Tagesvorlage neu laden</button></details></section>`;
@@ -952,7 +967,7 @@ function wireUpgrade(){
  const cancel=main.querySelector('[data-taskcancel]');if(cancel)cancel.onclick=()=>{taskEditor=null;render();};
  main.querySelectorAll('[data-taskdelete]').forEach(b=>b.onclick=()=>{const p=ensureDayPlan(todayKey());updateDayPlan(todayKey(),{...p,customized:true,items:p.items.filter(x=>x.id!==b.dataset.taskdelete)});render();notifyUser('Termin entfernt. Du kannst ihn rückgängig machen.');});
  const undo=main.querySelector('[data-taskundo]');if(undo)undo.onclick=()=>{state.dayPlans[dayUndo.day]=dayUndo.plan;dayUndo=null;saveDayPlans();taskEditor=null;state.dayPlanMsg='';render();notifyUser('Änderung rückgängig gemacht.');};
- const form=document.getElementById('taskForm');if(form)form.onsubmit=e=>{e.preventDefault();const text=document.getElementById('taskTitle').value.trim(),time=document.getElementById('taskTime').value,dayOffset=+document.getElementById('taskOffset').value;if(!text||!/^([01]\d|2[0-3]):[0-5]\d$/.test(time))return;const p=ensureDayPlan(todayKey()),existing=p.items.find(x=>x.id===taskEditor),entry={...(existing||{id:uid(),done:false}),text,time,dayOffset};const items=existing?p.items.map(x=>x.id===taskEditor?entry:x):[...p.items,entry];updateDayPlan(todayKey(),{...p,customized:true,items:sortDayItems(items)});taskEditor=null;render();notifyUser('Tagesplan aktualisiert.');};
+ const form=document.getElementById('taskForm');if(form)form.onsubmit=e=>{e.preventDefault();const text=document.getElementById('taskTitle').value.trim(),time=document.getElementById('taskTime').value,dayOffset=+document.getElementById('taskOffset').value;if(!text||!/^([01]\d|2[0-3]):[0-5]\d$/.test(time))return;const p=ensureDayPlan(todayKey()),existing=p.items.find(x=>x.id===taskEditor),entry={...(existing||{id:uid(),done:false}),text,time,dayOffset,source:'custom'};const items=existing?p.items.map(x=>x.id===taskEditor?entry:x):[...p.items,entry];updateDayPlan(todayKey(),{...p,customized:true,items:sortDayItems(items)});taskEditor=null;render();notifyUser('Tagesplan aktualisiert.');};
  main.querySelectorAll('[data-example]').forEach(b=>b.onclick=()=>{const inp=document.getElementById('dayPlanCommand');inp.value=b.dataset.example;inp.focus();});
  main.querySelectorAll('[data-quickmeal]').forEach(b=>b.onclick=()=>{state.tab='essen';state.foodPicker=true;state.mealFor=new Date().getHours()<11?'fruehstueck':new Date().getHours()<16?'mittag':'abend';render();});
  main.querySelectorAll('input[data-f],.ex-note,#noteInp').forEach(el=>el.addEventListener('input',persistWorkout));
@@ -1016,18 +1031,18 @@ function viewActivityPicker(){
 function viewHeute(){
  if(state.actAdding)return viewActivityPicker();
  const ts=effShift(todayKey());
- const fromRota=!state.shiftByDate[todayKey()]&&!!rotaShift(todayKey());
+ const fromRota=shiftModeEnabled()&&!state.shiftByDate[todayKey()]&&!!rotaShift(todayKey());
  const wk=new Date();wk.setDate(wk.getDate()-6);
  const sess=state.history.filter(h=>new Date(h.date)>=wk).length;
  const kg=latestKg(),nd=dayById(state.nextDayId),tg=targets(),con=consumedToday();
  const chips=Object.entries(SHIFTS).map(([k,v])=>`<button class="chip${ts===k?' chip--on':''}" data-shift="${k}">${v.label}</button>`).join("");
  let preview="";
- if(rotaShift(todayKey())){
+ if(shiftModeEnabled()&&rotaShift(todayKey())){
   const days=[];const wd=["So","Mo","Di","Mi","Do","Fr","Sa"];
   const sh={frueh:"F",spaet:"S",nacht:"N",frei:"–"};
   for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()+i);const key=dateKey(d);const s=effShift(key);days.push(`<div class="rotaday${i===0?' rotaday--today':''}"><span class="rd-wd">${i===0?"Heute":wd[d.getDay()]}</span><span class="rd-s">${s?sh[s]:"—"}</span></div>`);}
   preview=`<div class="rotaprev">${days.join("")}</div><p class="muted sm" style="margin:8px 0 0">F Früh · S Spät · N Nacht · – Frei. ${fromRota?"Automatisch aus deinem Schichtrhythmus — Tipp auf eine Schicht überschreibt nur heute.":"Heute manuell gewählt — erneut antippen, dann gilt wieder der Rhythmus."}</p>`;
- }else if(!ts)preview=`<p class="muted sm" style="margin:10px 0 0">Tipp: Unter „Mehr" → „Schichtplan" hinterlegst du deinen Schicht-Rhythmus einmal — dann wählt Hermes die Schicht jeden Tag automatisch.</p>`;
+ }else if(shiftModeEnabled()&&!ts)preview=`<p class="muted sm" style="margin:10px 0 0">Unter „Mehr" → „Schichtplan“ kannst du einen Rhythmus hinterlegen oder hier nur die heutige Schicht wählen.</p>`;
  let hero;
  if(ts){const s=SHIFTS[ts];
   const restNight=isRestAfterNight(todayKey());
@@ -1035,7 +1050,11 @@ function viewHeute(){
   const note=restNight?"Erster freier Tag nach dem Nacht-Block — der gehört dem Schlaf.":s.note;
   const body=restNight?`<div class="hero-rest">Heute kein Training. Schlaf nach, iss gut und tank auf — morgen greifst du wieder voll an.</div>`:(s.train?`<button class="btn" data-go="training">${esc(nd.label)} starten</button>`:`<div class="hero-rest">Heute leicht halten.</div>`);
   hero=`<section class="card hero"><div class="eyebrow">Dein Fokus heute · ${s.label}${ts==='frei'?'':'schicht'}</div><div class="hero-tag">${restNight?'Raum für Erholung.':s.train?'Zeit für dich.':'In deinem Tempo.'}</div><div class="hero-when">${when}</div><p class="hero-note">${note}</p>${body}</section>`;}
- else hero=`<section class="card hero hero--empty">Wähl unten deine Schicht — dann zeigt dir Hermes, wann und wie der Tag am besten läuft.</section>`;
+ else {
+  const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+  const trainedToday=state.history.some(h=>dateKey(new Date(h.date))===todayKey()),rest=state.history.some(h=>dateKey(new Date(h.date))===dateKey(yesterday));
+  hero=`<section class="card hero"><div class="eyebrow">Dein Fokus heute</div><div class="hero-tag">${trainedToday?'Training erledigt.':rest?'Raum für Erholung.':'Zeit für dich.'}</div><div class="hero-when">${trainedToday?'Bewegung, Essen und Erholung in Balance.':rest?'Gestern trainiert — heute Zeit zum Auftanken.':`Deine nächste Einheit: ${esc(nd.label)}.`}</div><p class="hero-note">${trainedToday||rest?'Ein Spaziergang, regelmäßige Mahlzeiten und Zeit für dich passen gut in deinen Tag.':'Plane dein Training, iss regelmäßig und lass Raum für deine eigenen Vorhaben.'}</p><button class="btn" data-go="training">${trainedToday||rest?'Training öffnen':esc(nd.label)+' starten'}</button></section>`;
+ }
  return `<div class="stack">
   ${hero}
   <div class="quick-actions"><button data-quickmeal>${NAVICONS.essen}Essen eintragen</button><button data-go="training">${NAVICONS.training}Training öffnen</button><button data-actadd="1">${NAVICONS.heute}Aktivität erfassen</button></div>
@@ -1047,7 +1066,7 @@ function viewHeute(){
    <section class="card stat"><div class="stat-num" style="font-size:26px">${kg??"—"}${kg?'<span class="u">kg</span>':''}</div><div class="stat-lbl">aktuelles<br>Gewicht</div></section>
    <section class="card stat"><div class="stat-num" style="font-size:26px">${foodStreak()}</div><div class="stat-lbl">Tage Essen<br>getrackt</div></section>
   </div>
-  <section class="card"><div class="eyebrow">Schicht heute</div><div class="shiftrow">${chips}</div>${preview}</section>
+  ${shiftModeEnabled()?`<section class="card"><div class="eyebrow">Schicht heute</div><div class="shiftrow">${chips}</div>${preview}</section>`:''}
  </div>`;
 }
 
@@ -1496,9 +1515,10 @@ function acc(id,title,inner){const open=!!state.acc[id];return `<div class="acc"
 function viewMehr(){
  return `<div class="stack">
   <p class="muted sm" style="margin:0 2px 2px">Einstellungen. Trainingsplan &amp; Verlauf findest du im Tab „Training", Essen &amp; Wasser unter „Essen".</p>
+  <section class="card"><div class="section-top"><div><h2>Tagesplanung</h2><p>Dein Alltag, dein Tempo.</p></div></div><div class="between"><b>Schichtmodus</b><button class="chip${shiftModeEnabled()?' chip--on':''}" role="switch" aria-label="Schichtmodus" aria-checked="${shiftModeEnabled()}" data-shiftmode>${shiftModeEnabled()?'Ein':'Aus'}</button></div><p class="muted sm" style="margin-bottom:0">${shiftModeEnabled()?'Dein Tagesplan berücksichtigt Früh-, Spät- und Nachtschichten.':'Dein Tagesplan konzentriert sich auf Training, Essen, Bewegung und eigene Vorhaben.'}</p></section>
   ${acc("theme","Darstellung",themeEditor())}
   ${acc("profile","Profil & Ziel",profileEditor())}
-  ${acc("rota","Schichtplan (Rhythmus)",rotaEditor())}
+  ${shiftModeEnabled()?acc("rota","Schichtplan (Rhythmus)",rotaEditor()):''}
   ${acc("goals","Feineinstellungen: Protein & Pause",goalsEditor())}
   ${acc("data","Daten sichern",dataEditor())}
  </div>`;
@@ -1533,7 +1553,7 @@ function wizEditor(){
 function profileEditor(){
  const p=state.profile,kg=latestKg();
  const sexBtn=(v,l)=>`<button class="btn ${p.sex===v?'':'btn-ghost'} btn-sm" data-sex="${v}">${l}</button>`;
- const actOpt=[[1.2,"Wenig (Büro)"],[1.375,"Leicht aktiv"],[1.55,"Aktiv"],[1.725,"Sehr aktiv"]];
+ const actOpt=[[1.2,"Überwiegend sitzend"],[1.375,"Leicht aktiv"],[1.55,"Aktiv"],[1.725,"Sehr aktiv"]];
  const goalOpt=[["abnehmen","Abnehmen"],["halten","Halten"],["aufbau","Aufbau"],["recomp","Body Recomp (Fett ↓ + Muskel ↑)"]];
  return `<div class="grid2" style="margin-bottom:12px">${sexBtn("m","Mann")}${sexBtn("w","Frau")}</div>
   <div class="grid2"><div class="field"><label>Alter</label><input class="inp" type="number" id="pfAge" value="${p.age}"></div><div class="field"><label>Größe (cm)</label><input class="inp" type="number" id="pfH" value="${p.height}"></div></div>
@@ -1582,12 +1602,12 @@ function wire(){
  navEl.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;state.libFor=null;state.foodPicker=false;if(b.dataset.tab==="training")state.trainView="log";render();});
  main.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{state.tab=b.dataset.go;if(b.dataset.go==="training")state.trainView="log";render();});
  // Heute
- main.querySelectorAll("[data-shift]").forEach(b=>b.onclick=()=>{const day=todayKey(),k=b.dataset.shift,sbd={...state.shiftByDate},oldPlan=state.dayPlans[day];if(sbd[day]===k)delete sbd[day];else sbd[day]=k;state.shiftByDate=sbd;save(K.shifts,sbd);if(oldPlan&&!oldPlan.customized){const dp={...state.dayPlans};delete dp[day];state.dayPlans=dp;saveDayPlans();}state.dayPlanMsg='';render();notifyUser(oldPlan&&oldPlan.customized?'Schicht geändert. Dein angepasster Tagesplan bleibt erhalten.':'Tagesplan an die Schicht angepasst.');});
+ main.querySelectorAll("[data-shift]").forEach(b=>b.onclick=()=>{const day=todayKey(),k=b.dataset.shift,sbd={...state.shiftByDate},oldPlan=state.dayPlans[day];if(sbd[day]===k)delete sbd[day];else sbd[day]=k;state.shiftByDate=sbd;save(K.shifts,sbd);state.dayPlanMsg='';render();notifyUser(oldPlan&&oldPlan.customized?'Schicht geändert. Dein angepasster Tagesplan bleibt erhalten.':'Tagesplan an die Schicht angepasst.');});
  main.querySelectorAll("[data-daydone]").forEach(b=>b.onclick=()=>{const day=todayKey(),p=ensureDayPlan(day);updateDayPlan(day,{...p,customized:true,items:p.items.map(x=>x.id===b.dataset.daydone?{...x,done:!x.done}:x)});render();});
  const dpa=main.querySelector("[data-dayapply]");if(dpa)dpa.onclick=()=>{const inp=document.getElementById("dayPlanCommand");if(applyDayCommand(inp&&inp.value))render();else{const msg=document.getElementById("dayPlanMsg");if(msg)msg.textContent=state.dayPlanMsg;}};
  const dpi=document.getElementById("dayPlanCommand");if(dpi)dpi.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();if(applyDayCommand(dpi.value))render();else{const msg=document.getElementById("dayPlanMsg");if(msg)msg.textContent=state.dayPlanMsg;}}};
  const dps=main.querySelector("[data-dayspeak]");if(dps)dps.onclick=startDaySpeech;
- const dpr=main.querySelector("[data-dayreset]");if(dpr)dpr.onclick=()=>{if(!confirm('Tagesvorlage neu laden? Deine heutigen Anpassungen werden ersetzt. Du kannst das anschließend rückgängig machen.'))return;const day=todayKey();updateDayPlan(day,{shift:effShift(day)||null,customized:false,items:dayPlanTemplate(effShift(day),day)});taskEditor=null;state.dayPlanMsg='Tagesvorlage neu geladen.';render();};
+ const dpr=main.querySelector("[data-dayreset]");if(dpr)dpr.onclick=()=>{if(!confirm('Tagesvorlage neu laden? Deine heutigen Anpassungen werden ersetzt. Du kannst das anschließend rückgängig machen.'))return;const day=todayKey();updateDayPlan(day,{...ensureDayPlan(day),shift:effShift(day)||null,mode:planningMode(),customized:false,items:dayPlanTemplate(effShift(day),day)});taskEditor=null;state.dayPlanMsg='Tagesvorlage neu geladen.';render();};
  // Training
  main.querySelectorAll("[data-trainview]").forEach(b=>b.onclick=()=>{state.trainView=b.dataset.trainview;state.libFor=null;render();});
  main.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>switchDay(b.dataset.day));
@@ -1637,6 +1657,7 @@ function wire(){
  const pfAct=document.getElementById("pfAct");if(pfAct)pfAct.onchange=()=>{state.profile.activity=+pfAct.value;sPr();};
  const pfGoal=document.getElementById("pfGoal");if(pfGoal)pfGoal.onchange=()=>{state.profile.goal=pfGoal.value;sPr();};
  // Schichtplan
+ const sm=main.querySelector('[data-shiftmode]');if(sm)sm.onclick=()=>setShiftMode(!shiftModeEnabled());
  const rs=document.getElementById("rotaStart");if(rs)rs.onchange=()=>{state.rota={...state.rota,start:rs.value};save(K.rota,state.rota);rotaApplied();};
  main.querySelectorAll("[data-rotacycle]").forEach(b=>b.onclick=()=>{const i=+b.dataset.rotacycle;const order=["frueh","spaet","nacht","frei"];state.rota.seq[i]=order[(order.indexOf(state.rota.seq[i])+1)%4];save(K.rota,state.rota);rotaApplied();render();});
  const ra=main.querySelector("[data-rotaadd]");if(ra)ra.onclick=()=>{state.rota.seq.push("frei");if(!state.rota.start)state.rota.start=todayKey();save(K.rota,state.rota);rotaApplied();render();};
@@ -1689,6 +1710,7 @@ function doReset(){if(!confirm("Wirklich ALLE Daten löschen?"))return;Object.va
 function applyImportObj(obj){
  const record=v=>v!==null&&typeof v==='object'&&!Array.isArray(v),str=v=>typeof v==='string',num=v=>Number.isFinite(v),date=v=>str(v)&&/^\d{4}-\d{2}-\d{2}$/.test(v);
  const exercise=e=>record(e)&&str(e.name)&&Array.isArray(e.sets)&&e.sets.every(record);
+ const dayPlanEntry=p=>record(p)&&(!('mode' in p)||['daily','shift'].includes(p.mode))&&Array.isArray(p.items)&&p.items.every(x=>record(x)&&str(x.id)&&str(x.text)&&/^([01]\d|2[0-3]):[0-5]\d$/.test(x.time));
  const validators={
   [K.plan]:v=>Array.isArray(v)&&v.length>0&&v.every(d=>record(d)&&str(d.id)&&str(d.label)&&Array.isArray(d.exercises)&&d.exercises.every(e=>record(e)&&str(e.name)&&num(e.sets)&&e.sets>0&&str(e.reps)&&['kg','s','bw','min'].includes(e.unit))),
   [K.weight]:v=>Array.isArray(v)&&v.every(x=>record(x)&&date(x.date)&&num(x.kg)&&x.kg>0),
@@ -1700,9 +1722,9 @@ function applyImportObj(obj){
   [K.acts]:v=>record(v)&&Object.values(v).every(a=>Array.isArray(a)&&a.every(x=>record(x)&&str(x.name)&&num(x.min)&&num(x.kcal))),
   [K.shifts]:v=>record(v)&&Object.values(v).every(x=>Object.hasOwn(SHIFTS,x)),
   [K.rota]:v=>record(v)&&str(v.start)&&Array.isArray(v.seq)&&v.seq.every(x=>Object.hasOwn(SHIFTS,x)),
-  [K.dayPlans]:v=>record(v)&&Object.values(v).every(p=>record(p)&&Array.isArray(p.items)&&p.items.every(x=>record(x)&&str(x.id)&&str(x.text)&&/^([01]\d|2[0-3]):[0-5]\d$/.test(x.time))),
+  [K.dayPlans]:v=>record(v)&&Object.values(v).every(p=>dayPlanEntry(p)&&(!('savedModes' in p)||(record(p.savedModes)&&Object.entries(p.savedModes).every(([mode,plan])=>['daily','shift'].includes(mode)&&dayPlanEntry(plan)&&!('savedModes' in plan))))),
   [K.draft]:v=>v===null||(record(v)&&str(v.dayId)&&Array.isArray(v.log)&&v.log.every(exercise)),
-  [K.settings]:v=>record(v)&&(!('theme' in v)||['obsidian','marmor'].includes(v.theme))&&['rest','protein'].every(k=>!(k in v)||(num(v[k])&&v[k]>=0)),
+  [K.settings]:v=>record(v)&&(!('theme' in v)||['obsidian','marmor'].includes(v.theme))&&(!('shiftMode' in v)||typeof v.shiftMode==='boolean')&&['rest','protein'].every(k=>!(k in v)||(num(v[k])&&v[k]>=0)),
   [K.profile]:v=>record(v)&&['age','height','activity'].every(k=>!(k in v)||(num(v[k])&&v[k]>0)),
   [K.last]:v=>record(v)&&Object.values(v).every(record),[K.pr]:v=>record(v)&&Object.values(v).every(x=>record(x)&&str(x.date))
  };
@@ -1716,7 +1738,7 @@ function applyImportObj(obj){
 function doDownload(){const dump={};Object.values(K).forEach(k=>{const v=localStorage.getItem(k);if(v)dump[k]=v;});const blob=new Blob([JSON.stringify(dump,null,0)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="hermes-backup-"+todayKey()+".json";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function doFileImport(){const inp=document.getElementById("fileInput");if(!inp)return;inp.value="";inp.onchange=()=>{const file=inp.files&&inp.files[0];if(!file)return;const r=new FileReader();r.onload=()=>{try{applyImportObj(JSON.parse(String(r.result)));alert("Geladen.");}catch{alert("Datei unlesbar — bitte eine Hermes-Backup-Datei wählen.");}};r.readAsText(file);};inp.click();}
 function reloadState(){
- state.plan=load(K.plan,defaultPlan());state.settings=Object.assign({theme:"obsidian",rest:90,protein:1.9},load(K.settings,{}));
+ state.plan=load(K.plan,defaultPlan());state.settings=Object.assign({theme:"obsidian",rest:90,protein:1.9,shiftMode:false},load(K.settings,{}));
  state.profile=Object.assign({sex:"m",age:30,height:180,activity:1.375,goal:"abnehmen"},load(K.profile,{}));
  state.bodyweight=load(K.weight,[]);state.history=load(K.history,[]);state.lastBest=load(K.last,{});state.prs=load(K.pr,{});state.lastPRs=[];
  state.shiftByDate=load(K.shifts,{});state.nextDayId=load(K.nextDay,null);state.foodLog=load(K.food,{});state.waterLog=load(K.water,{});state.customFoods=load(K.custom,[]);state.activityLog=load(K.acts,{});state.rota=load(K.rota,{start:"",seq:[]});state.dayPlans=load(K.dayPlans,{});state.dayPlanMsg="";

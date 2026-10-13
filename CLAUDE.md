@@ -4,8 +4,8 @@ Kontext-Datei für Claude Code. Bitte vor jeder Änderung lesen.
 
 ## Was ist das
 
-Hermes ist eine persönliche Trainings- und Ernährungs-App für einen Schichtarbeiter
-(rotierende Schichten: Früh / Spät / Nacht / Frei). Ziele des Nutzers: Muskelaufbau
+Hermes ist eine persönliche Trainings-, Ernährungs- und Tagesplan-App. Der Nutzer
+arbeitet derzeit nicht; Schichtplanung ist eine optionale Einstellung. Ziele: Muskelaufbau
 + Fettabbau nach längerer Trainingspause (Wiedereinstieg, "muscle memory").
 
 Die App ist eine **einzige `index.html`** — kein Build, kein Framework, keine
@@ -50,6 +50,13 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 - Tagesplan: eigenes Formular (`taskEditorForm`) zum Hinzufügen/Bearbeiten, `dayUndo` für die
   letzte Änderung, eindeutige Treffer bei Textbefehlen, Sprache erst als bestätigbarer Entwurf.
   `data-taskdelete` gehört ausschließlich zum Tagesplan; `data-daydel` bleibt dem Trainingsplan vorbehalten.
+- Schichtmodus ist standardmäßig aus, auch bei alten Einstellungen ohne `shiftMode`.
+  Unter Mehr → Tagesplanung lässt er sich aktivieren. `effShift` ignoriert gespeicherte Schichten,
+  solange der Modus aus ist; Heute zeigt dann normale Tagesplanung und Training/Erholung.
+  Schichtauswahl und Rhythmus-Editor erscheinen nur bei aktivem Modus. Gespeicherte Schichtdaten bleiben erhalten.
+  Tagespläne speichern `mode` und `savedModes`: Beim Wechsel wird der bisherige Plan aufgehoben,
+  persönliche Termine werden in eine neue Vorlage übernommen; Rückwechsel stellt den anderen Plan wieder her.
+  `source: template/custom` unterscheidet künftig automatisch erzeugte von selbst bearbeiteten Punkten.
 - Nachtschicht-Einträge können `dayOffset: 1` für den Folgetag enthalten; Sortierung berücksichtigt
   diesen Wert. Automatische Vorlagen respektieren den ersten freien Tag nach Nacht und Training am Vortag.
   Ein angepasster Plan bleibt bei Schichtänderungen erhalten und zeigt einen Hinweis auf die neue Vorlage.
@@ -106,7 +113,7 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 - `heute` — **oben Übersicht** (`ovrCard`): Kalorien-Ring + „Gegessen"/„Verbraucht"
   daneben, Buttons „+ Aktivität" / „Essen". Darunter Trainings-Empfehlung, Mini-Stats
-  (inkl. Essens-Serie `foodStreak()`), unten die Schicht-Auswahl. 1. freier Tag nach
+  (inkl. Essens-Serie `foodStreak()`), optional die Schicht-Auswahl. 1. freier Tag nach
   Nachtschicht (`isRestAfterNight`, `prevShift`) → Schlaf-Empfehlung statt Trainings-Button.
   „+ Aktivität" öffnet den Aktivitäten-Picker (`viewActivityPicker`, `state.actAdding`):
   Aktivität + Dauer → geschätzter Kalorienverbrauch (`ACTS` MET-Werte, `actKcal`),
@@ -139,7 +146,7 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 ```
 hermes:plan      Trainingsplan (Tage + Übungen)
-hermes:settings  { theme, rest, protein }
+hermes:settings  { theme, rest, protein, shiftMode }
 hermes:profile   { sex, age, height, activity, goal }
 hermes:bw        Gewichtsverlauf [{date, kg}]
 hermes:hist      Trainings-Historie
@@ -233,7 +240,7 @@ hermes:dayplans  automatisch erzeugte Tagespläne je Datum inkl. manueller Ände
   (zusätzlich zur Copy-Sicherung `doExport`/`doImport`).
 - `render()`, `wire()`, `bar()` (Fortschrittsbalken), `svgChart()` (Gewichtskurve).
 - `dayPlanTemplate()` / `ensureDayPlan()` / `applyDayCommand()` — erzeugt im Heute-Tab
-  pro Kalendertag einen schichtabhängigen Tagesplan. Freie deutsche Kurzbefehle können
+  pro Kalendertag einen normalen, optional schichtabhängigen Tagesplan. Freie deutsche Kurzbefehle können
   Punkte hinzufügen, verschieben, erledigen oder entfernen; Spracheingabe nutzt optional
   die eingebaute Web-Speech-API des Browsers.
 
