@@ -46,6 +46,11 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 ### Hermes 4 (Oktober 2026)
 
+- Training abbrechen: × in der angehefteten Leiste und Button unter „Einheit speichern“.
+  `confirmCancelWorkout` fragt per Bottom-Sheet nach. Weitertrainieren/Escape erhalten
+  den Entwurf; Bestätigen leert nur die aktive Einheit, stoppt den Timer und entfernt
+  `hermes:draft`/Satz-Undo. Vorlage, Verlauf, Rekorde und Rotation bleiben erhalten.
+  Noch laufende Löschanimationen können den verworfenen Entwurf nicht wiederherstellen.
 - 4.1: Seitenanimationen werden bei jedem echten Ansichtswechsel neu gestartet
   (`animateViewEntrance`/Web Animations). Vorher konnte die unverändert gesetzte
   CSS-Klasse einen erneuten Start verhindern. Kurze Staffelung der ersten Karten,

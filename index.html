@@ -1167,12 +1167,13 @@ function viewTraining(){
  }).join("");
  const {done,total}=counts();
  return `<div class="stack">
-  <div class="session-bar"><button class="quiet-icon" data-workoutback aria-label="Training minimieren und zur Übersicht">⌄</button><button class="session-clock" data-exjump aria-label="Trainingsdauer und Übungsauswahl"><span id="workoutElapsed">${state.startedAt?fmtElapsed(Math.floor((Date.now()-state.startedAt)/1000)):'0:00'}</span><small>Dauer · Übungen ↓</small></button>${state.startedAt?`<button class="btn btn-sm" data-endsession="1" ${done===0?'disabled':''}>Beenden</button>`:`<button class="btn btn-sm" data-startworkout>Starten</button>`}</div>
+  <div class="session-bar"><button class="quiet-icon" data-workoutback aria-label="Training minimieren und zur Übersicht">⌄</button><button class="session-clock" data-exjump aria-label="Trainingsdauer und Übungsauswahl"><span id="workoutElapsed">${state.startedAt?fmtElapsed(Math.floor((Date.now()-state.startedAt)/1000)):'0:00'}</span><small>Dauer · Übungen ↓</small></button>${state.startedAt?`<button class="btn btn-sm" data-endsession="1" ${done===0?'disabled':''}>Beenden</button>`:`<button class="btn btn-sm" data-startworkout>Starten</button>`}<button class="quiet-icon" data-cancelworkout aria-label="Training abbrechen" title="Training abbrechen">×</button></div>
   <section class="session-intro"><h1>${esc(dayById(state.trainDayId).label)}</h1><div class="workout-meta">${new Date(state.startedAt||Date.now()).toLocaleDateString('de-DE',{day:'numeric',month:'long'})} · ${state.log.length} Übungen</div><div class="session-progress"><span id="progTxt">${done} / ${total} Sätze erledigt</span><small>Dein Fortschritt</small></div><div class="progress"><div class="progress-bar" id="progBar" style="width:${total?done/total*100:0}%"></div></div></section>
   ${setUndo&&setUndo.log===state.log?`<div class="set-undo" role="status"><span>Satz ${setUndo.index+1} entfernt · ${esc(setUndo.exercise.name)}</span><button data-undoset>Rückgängig</button></div>`:''}
   ${exHtml}
   <section class="session-note"><label for="noteInp" class="training-section-title">Deine Trainingsnotiz</label><textarea class="notearea" id="noteInp" placeholder="Wie hat es sich angefühlt?">${esc(state.note)}</textarea><p class="draft-note">Automatisch auf diesem Gerät gespeichert.</p></section>
   <button class="btn" id="saveBtn" ${done===0?'disabled':''} data-save="1">Einheit speichern</button>
+  <button class="btn btn-ghost" data-cancelworkout>Training abbrechen</button>
   <details class="workout-help"><summary>Tipps zur Bedienung</summary><p>Satz nach links wischen zum Löschen oder die Satznummer antippen. Der letzte Satz bleibt erhalten. Über N, F, W oder D wählst du den Satztyp. Anleitungen, Verlauf und Einstellungen findest du bei ···.</p><p>Beim Wiedereinstieg die ersten Wochen 2–3 Wiederholungen im Tank lassen.</p></details>
  </div>`;
 }
@@ -1316,6 +1317,13 @@ function checkPRs(){
   if(!old||best.score>old.score){prs[ex.name]={score:+best.score.toFixed(1),weight:best.weight,reps:best.reps,unit:ex.unit,date};newPRs.push({name:ex.name,weight:best.weight,reps:best.reps,unit:ex.unit,prev:old||null});}
  });
  state.prs=prs;save(K.pr,prs);state.lastPRs=newPRs;
+}
+function confirmCancelWorkout(){
+ if(state.saved)return;const log=state.log;
+ trainingSheet('Training abbrechen?',`<p class="setting-help">Diese Einheit wird nicht gespeichert. Die eingetragenen Sätze und Notizen dieser Einheit werden verworfen.</p><div class="completion-actions"><button class="btn" data-keepworkout>Weitertrainieren</button><button class="btn btn-ghost" data-confirmcancelworkout>Ja, Training abbrechen</button></div>`,dialog=>{
+  dialog.querySelector('[data-keepworkout]').onclick=()=>dialog.close();
+  dialog.querySelector('[data-confirmcancelworkout]').onclick=()=>{if(state.saved||state.log!==log){dialog.close();return;}dialog.close();stopRest();removingSets.clear();setUndo=null;suppressSetClickUntil=0;state.log=buildLog(state.trainDayId);state.note='';state.startedAt=null;state.saved=false;state.workoutOpen=false;state.workoutMinimized=false;state.workoutScroll=0;state.trainView='log';state.tab='training';localStorage.removeItem(K.draft);clearTimeout(toastTimer);document.getElementById('toast').textContent='';render();notifyUser('Training abgebrochen. Die Einheit wurde nicht gespeichert.');};
+ });
 }
 function finish(){
  flushSetRemovals();
@@ -1758,6 +1766,7 @@ function wire(){
  const note=document.getElementById("noteInp");if(note)note.oninput=()=>{ensureWorkoutStarted();state.note=note.value;};
  const st=main.querySelector('[data-startworkout]');if(st)st.onclick=()=>{ensureWorkoutStarted();render();};
  main.querySelectorAll("[data-save],[data-endsession]").forEach(b=>b.onclick=finish);
+ main.querySelectorAll('[data-cancelworkout]').forEach(b=>b.onclick=confirmCancelWorkout);
  const pr=main.querySelector("[data-prepare]");if(pr)pr.onclick=()=>switchDay(pr.dataset.prepare);
  // Essen
  main.querySelectorAll('[data-actadd]').forEach(b=>b.onclick=()=>{state.actAdding=true;render();});
