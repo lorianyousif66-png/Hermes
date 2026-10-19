@@ -389,6 +389,7 @@ body.has-background .app{background:var(--bg);background:color-mix(in srgb,var(-
 </div></div>
 <script>
 "use strict";
+const APP_VERSION='4.0';
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 /* Kurze Vibration als Bestätigung (Android; anderswo stiller No-Op). */
 function buzz(p='tap'){if(state.settings.haptics===false)return;const patterns={tap:7,select:10,complete:[12,35,18],delete:14,undo:[7,25,7],success:[15,45,25],ready:6};try{if(navigator.vibrate)navigator.vibrate(typeof p==='string'?(patterns[p]||7):p);}catch(e){}}
@@ -1002,7 +1003,7 @@ function pageHeading(){
  const titles={heute:['Heute','Dein Tag, in deinem Tempo.'],training:['Training','Ein guter Moment, um stärker zu werden.'],essen:['Ernährung','Alles, was dich gut versorgt.'],gewicht:['Fortschritt','Deine Entwicklung im Blick.'],mehr:['Einstellungen','So passt Hermes zu dir.']};
  const [title,sub]=titles[state.tab];
  const date=new Date().toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'});
- return `<div class="page-heading"><div class="date-line"><span>${esc(date)}</span><span class="status-pill">${navigator.onLine?'Hermes 4.0':'Offline'}</span></div><h1>${title}</h1><p>${sub}</p></div>`;
+ return `<div class="page-heading"><div class="date-line"><span>${esc(date)}</span>${navigator.onLine?'':'<span class="status-pill">Offline</span>'}</div><h1>${title}</h1><p>${sub}</p></div>`;
 }
 function taskEditorForm(item){return `<form id="taskForm" class="inline-form"><label>Was steht an?<input id="taskTitle" class="inp" style="text-align:left" required maxlength="100" value="${esc(item?.text||'')}" placeholder="Zum Beispiel: Einkaufen"></label><div class="form-pair"><label>Uhrzeit<input id="taskTime" class="inp" type="time" required value="${esc(item?.time||'17:00')}"></label><label>Tag<select id="taskOffset" class="sel"><option value="0">Heute</option><option value="1" ${item?.dayOffset?'selected':''}>Folgetag (nach Mitternacht)</option></select></label></div><div class="form-actions"><button type="button" class="btn btn-ghost btn-sm" data-taskcancel>Abbrechen</button><button class="btn btn-sm" type="submit">Speichern</button></div></form>`;}
 function wireUpgrade(){
@@ -1596,6 +1597,7 @@ function viewMehr(){
   ${shiftModeEnabled()?acc("rota","Schichtplan (Rhythmus)",rotaEditor()):''}
   ${acc("goals","Feineinstellungen: Protein & Pause",goalsEditor())}
   ${acc("data","Daten sichern",dataEditor())}
+  <p class="tip" data-appversion>Hermes · Version ${APP_VERSION}</p>
  </div>`;
 }
 function shiftTodaySettings(){
