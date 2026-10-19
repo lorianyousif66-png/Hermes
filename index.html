@@ -365,6 +365,7 @@ body.has-background .app{background:var(--bg);background:color-mix(in srgb,var(-
 .ui-sheet[open]{animation:none}.exercise-card .check--on{animation:set-confirm-visible .36s cubic-bezier(.2,.8,.2,1)}.restbar.on{animation:timer-arrive .34s cubic-bezier(.2,.8,.2,1)}
 @keyframes set-confirm-visible{0%{transform:scale(.72)}55%{transform:scale(1.12)}100%{transform:scale(1)}}@keyframes timer-arrive{from{opacity:0;translate:0 24px}to{opacity:1;translate:0 0}}
 @media(prefers-reduced-motion:reduce){.exercise-card .check--on,.restbar.on{animation:none}}
+.food-item{cursor:pointer}.food-details{display:block;width:100%;border:0;padding:4px 0;background:none;color:var(--text);text-align:left;cursor:pointer;min-height:44px}.food-details .pn,.food-details .pmeta,.food-last{display:block;overflow-wrap:anywhere}.food-details .pn{font-weight:600}.food-last{font-size:10px;color:var(--muted);margin-top:5px}.food-last[hidden]{display:none}.food-quickamount{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)}.food-quickamount .gram-inp{width:58px;min-height:42px;font-size:16px}.food-item .portchip{font-size:10px;min-height:32px;padding:6px 8px}.food-detail .field label{color:var(--muted);font-size:12px}.food-amount-grid{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:10px;margin-top:16px}.food-amount-grid label{display:grid;gap:6px;color:var(--muted);font-size:12px}.food-amount-grid .inp,.food-amount-grid .sel{min-width:0;width:100%;text-align:left}.food-portion-choices{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0}.food-portion-choices button{background:var(--surface2);border:1px solid transparent;border-radius:12px;min-height:42px;padding:9px 12px;font-size:12px;color:var(--text);cursor:pointer}.food-portion-choices button[aria-pressed=true]{border-color:var(--text)}.food-macros{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:16px 0}.food-macros>div{padding:13px 4px;text-align:center;background:var(--surface2);border-radius:12px}.food-macros b{display:block;font-size:18px;font-weight:600;letter-spacing:-.5px}.food-macros small{font-size:10px;color:var(--muted)}.food-log-footer{position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom));background:var(--surface);padding:14px 0 calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--hair);margin-top:18px}.food-log-footer .sel{width:100%;margin-bottom:10px}.food-live-amount{font-size:12px;color:var(--muted);margin:0}.food-log-error{font-size:12px;line-height:1.5;color:var(--text);margin:8px 0}.food-log-error:empty{display:none}
 </style>
 </head>
 <body>
@@ -391,7 +392,7 @@ body.has-background .app{background:var(--bg);background:color-mix(in srgb,var(-
 </div></div>
 <script>
 "use strict";
-const APP_VERSION='4.1';
+const APP_VERSION='4.2';
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 /* Kurze Vibration als Bestätigung (Android; anderswo stiller No-Op). */
 function buzz(p='tap'){if(state.settings.haptics===false)return;const patterns={tap:7,select:10,complete:[12,35,18],delete:14,undo:[7,25,7],success:[15,45,25],ready:6};try{if(navigator.vibrate)navigator.vibrate(typeof p==='string'?(patterns[p]||7):p);}catch(e){}}
@@ -1465,13 +1466,15 @@ function trendChart(pts,target){
  return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block">${tline}${yl}<polyline points="${line}" fill="none" stroke="var(--text)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${dots}${xl}</svg>`;
 }
 function allFoods(){return [...state.customFoods,...FOODS.map(foodObj)];}
+function lastFoodAmount(name){for(const day of Object.keys(state.foodLog).sort().reverse()){const entries=state.foodLog[day]||[];for(let i=entries.length-1;i>=0;i--){const e=entries[i];if(e.name===name&&Number.isFinite(e.grams)&&e.grams>=.1&&e.grams<=100000)return e.grams;}}return null;}
+function suggestedFoodAmount(f){return lastFoodAmount(f.name)||PORTIONS[f.name]?.[0]?.[1]||100;}
 function viewFoodPicker(){
  const foods=allFoods();
  const recent=new Set(Object.keys(state.foodLog).sort().slice(-14).flatMap(d=>state.foodLog[d].map(e=>e.name)));
  const items=foods.map((f,i)=>({f,i})).sort((a,b)=>Number(b.i<state.customFoods.length)-Number(a.i<state.customFoods.length)||Number(recent.has(b.f.name))-Number(recent.has(a.f.name))).map(({f,i})=>{
   const pt=PORTIONS[f.name];
-  const chips=pt?`<div class="portrow">${pt.map(([l,g])=>`<button class="portchip" data-portadd="${i}|${g}">+ ${esc(l)}</button>`).join("")}</div>`:"";
-  return `<div class="pick-item food-item" data-name="${esc(f.name.toLowerCase())}" data-foodrecent="${recent.has(f.name)?1:0}"><div class="pick-left"><div class="pn" data-foodinfo="${i}">${esc(f.name)} <span class="ex-i">ⓘ</span></div><div class="pmeta">${Math.round(f.n.kcal)} kcal · ${f.n.p}g P · ${f.n.c}g KH · ${f.n.f}g F / 100g</div>${chips}</div><div class="gramrow"><input class="gram-inp" type="number" min="1" inputmode="decimal" aria-label="${esc(f.name)} Gramm" value="100" data-gram="${i}"><button class="pick-add" aria-label="${esc(f.name)} hinzufügen" data-addfood="${i}">+</button></div></div>`;
+  const last=lastFoodAmount(f.name),chips=pt?`<div class="portrow">${pt.map(([l,g])=>`<button class="portchip" data-portadd="${i}|${g}" aria-label="${esc(f.name)}, ${esc(l)} mit ${g} g auswählen">${esc(l)} · ${g} g</button>`).join("")}</div>`:"";
+  return `<div class="pick-item food-item" data-foodrow="${i}" data-name="${esc(f.name.toLowerCase())}" data-foodrecent="${recent.has(f.name)?1:0}"><div class="pick-left"><button class="food-details" data-foodinfo="${i}" aria-label="${esc(f.name)} ansehen und Menge wählen"><span class="pn">${esc(f.name)} <span class="ex-i" aria-hidden="true">ⓘ</span></span><span class="pmeta">${Math.round(f.n.kcal)} kcal · ${f.n.p}g P · ${f.n.c}g KH · ${f.n.f}g F / 100g</span><span class="food-last" ${last?'':'hidden'}>Zuletzt ${last||''} g</span></button>${chips}</div><div class="gramrow"><div class="food-quickamount"><input class="gram-inp" type="number" min="0.1" max="100000" step="any" inputmode="decimal" aria-label="${esc(f.name)} Gramm" value="${suggestedFoodAmount(f)}" data-gram="${i}"><span>g</span></div><button class="pick-add" aria-label="${esc(f.name)} hinzufügen" data-addfood="${i}">+</button></div></div>`;
  }).join("");
  const banner=state.scanAdded?`<div class="scan-added">✓ „${esc(state.scanAdded)}" angelegt — oben in der Liste, Menge wählen und + tippen.</div>`:"";
  return `<div class="stack">
@@ -1496,11 +1499,12 @@ function viewFoodPicker(){
  </div>`;
 }
 function addFood(idx,grams,meal){
- const f=allFoods()[idx];if(!f)return false;if(!Number.isFinite(grams)||grams<=0){notifyUser('Bitte gib eine Menge größer als 0 g ein.');return false;}const g=grams;
+ const f=allFoods()[idx];if(!f)return false;if(!Number.isFinite(grams)||grams<.1||grams>100000){notifyUser('Bitte gib eine gültige Menge zwischen 0,1 und 100.000 g ein.');return false;}const g=Math.round(grams*1000)/1000;
  const n={};FKEYS.forEach(k=>n[k]=(f.n[k]||0)*g/100);
  const day=todayKey();const arr=state.foodLog[day]?[...state.foodLog[day]]:[];
- arr.push({name:f.name,grams:g,meal:meal||state.mealFor,n});state.foodLog={...state.foodLog,[day]:arr};save(K.food,state.foodLog);
- notifyUser(f.name+' hinzugefügt · '+Math.round(g)+' g');buzz(12);return true;
+ const selectedMeal=MEALS.some(([key])=>key===meal)?meal:state.mealFor;arr.push({name:f.name,grams:g,meal:selectedMeal,n});const next={...state.foodLog,[day]:arr};if(!save(K.food,next))return false;state.foodLog=next;
+ const row=main.querySelector(`[data-foodrow="${idx}"]`);if(row){row.querySelector('[data-gram]').value=g;const last=row.querySelector('.food-last');last.hidden=false;last.textContent='Zuletzt '+g+' g';row.dataset.foodrecent='1';}
+ notifyUser(f.name+' hinzugefügt · '+g+' g · '+mealLabel(selectedMeal));buzz('complete');return true;
 }
 /* Gesundheits-Begründung aus dem Nährstoffprofil (pro 100 g) — skaliert auf alle
    Lebensmittel inkl. eigener. Grenzwerte grob nach „nennenswerter Menge je 100 g". */
@@ -1517,14 +1521,23 @@ function foodHealth(f){
  if((n.kcal||0)<=60&&(n.f||0)<5)out.push(["Kalorienarm","Wenig Kalorien bei viel Volumen — ideal zum Sattessen im Defizit."]);
  return out;
 }
-function openFoodInfo(idx){
+function openFoodInfo(idx,options={}){
  const f=allFoods()[idx];if(!f)return;
  const rows=NUT.filter(x=>x.k!=="water").map(x=>{const v=f.n[x.k]||0;const val=x.k==="kcal"?Math.round(v):Math.round(v*10)/10;return `<div class="nutrow"><span>${x.l}</span><span class="nv">${val} ${x.u}</span></div>`;}).join("");
  const h=foodHealth(f);
  const health=h.length?`<ul class="health-list">${h.map(([t,d])=>`<li><b>${esc(t)}:</b> ${esc(d)}</li>`).join("")}</ul>`:`<p class="muted sm" style="margin:8px 0 0">Sticht bei keinem Nährstoff besonders hervor — in Maßen Teil einer ausgewogenen Ernährung.</p>`;
- document.getElementById("exmodalCard").innerHTML=`<div class="exm-head"><div class="exm-title">${esc(f.name)}</div><button class="iconbtn" id="exmClose">✕</button></div><div class="exm-group">Nährwerte pro 100 g</div><div class="nuttable">${rows}</div><div class="exm-sec">Warum gut für dich</div>${health}<p class="muted sm" style="margin-top:12px">Nährwerte sind Näherungswerte pro 100 g.</p>`;
- document.getElementById("exmodal").classList.add("on");
- document.getElementById("exmClose").onclick=closeExInfo;
+ const portions=PORTIONS[f.name]||[['Portion',100]],last=lastFoodAmount(f.name),input=main.querySelector(`[data-gram="${idx}"]`),initial=Number.isFinite(options.grams)?options.grams:input&&Number.isFinite(input.valueAsNumber)?input.valueAsNumber:suggestedFoodAmount(f),preset=Number.isFinite(options.grams)?portions.findIndex(([,g])=>g===options.grams):-1;
+ trainingSheet(f.name,`<form class="food-detail" id="foodLogForm"><p class="setting-help">${last?`Zuletzt ${last.toLocaleString('de-DE')} g verwendet. Deine letzte Menge ist vorausgefüllt.`:'Wähle deine Menge und füge das Lebensmittel direkt zu deiner Mahlzeit hinzu.'}</p><div class="food-amount-grid"><label>Menge<input class="inp" id="foodDetailAmount" type="number" min="0.001" max="100000" step="any" inputmode="decimal" enterkeyhint="done" required value="${preset>=0?1:initial}"></label><label>Einheit<select class="sel" id="foodDetailUnit"><option value="g">Gramm</option>${portions.map(([label,g],i)=>`<option value="${i}" ${preset===i?'selected':''}>${esc(label)} (${g} g)</option>`).join('')}</select></label></div><div class="food-portion-choices">${portions.map(([label,g],i)=>`<button type="button" data-foodportion="${i}" aria-pressed="${preset===i}">${esc(label)} · ${g} g</button>`).join('')}${last?`<button type="button" data-foodlast>Zuletzt ${last.toLocaleString('de-DE')} g</button>`:''}</div><p class="food-live-amount" id="foodLiveAmount" aria-live="polite"></p><div class="food-macros">${[['kcal','kcal'],['p','g Protein'],['c','g Kohlenh.'],['f','g Fett']].map(([key,label])=>`<div><b data-foodstat="${key}">—</b><small>${label}</small></div>`).join('')}</div><p class="setting-help">Nährwerte und Portionsgrößen sind Richtwerte. Du kannst auch halbe oder mehrere Portionen eintragen.</p><details class="disclosure"><summary>Nährwerte pro 100 g</summary><div class="disclosure-content nuttable">${rows}</div></details><details class="disclosure" style="margin-top:10px"><summary>Mehr über dieses Lebensmittel</summary><div class="disclosure-content">${health}</div></details><div class="food-log-footer"><label class="lbl-sm" for="foodDetailMeal" style="margin-top:0">Mahlzeit</label><select class="sel" id="foodDetailMeal">${MEALS.map(([key,label])=>`<option value="${key}" ${state.mealFor===key?'selected':''}>${label}</option>`).join('')}</select><p class="food-log-error" id="foodLogError" role="status"></p><button class="btn" type="submit" id="foodDetailAdd">Hinzufügen</button></div></form>`,dialog=>{
+  const amount=dialog.querySelector('#foodDetailAmount'),unit=dialog.querySelector('#foodDetailUnit'),meal=dialog.querySelector('#foodDetailMeal'),add=dialog.querySelector('#foodDetailAdd'),error=dialog.querySelector('#foodLogError');let currentUnit=unit.value;
+  const grams=()=>amount.valueAsNumber*(unit.value==='g'?1:portions[+unit.value][1]);
+  const update=()=>{const g=grams(),valid=Number.isFinite(g)&&g>=.1&&g<=100000,kcal=valid?Math.round((f.n.kcal||0)*g/100):0;add.disabled=!valid;dialog.querySelector('#foodLiveAmount').textContent=valid?`${g.toLocaleString('de-DE',{maximumFractionDigits:3})} g in deiner Auswahl`:'Bitte wähle eine gültige Menge.';dialog.querySelectorAll('[data-foodstat]').forEach(el=>{const key=el.dataset.foodstat;el.textContent=valid?((f.n[key]||0)*g/100).toLocaleString('de-DE',{maximumFractionDigits:key==='kcal'?0:1}):'—';});dialog.querySelectorAll('[data-foodportion]').forEach(b=>b.setAttribute('aria-pressed',String(unit.value===b.dataset.foodportion)));add.textContent=valid?`Hinzufügen · ${kcal} kcal`:'Menge eingeben';error.textContent='';};
+  amount.oninput=update;meal.onchange=update;
+  unit.onchange=()=>{const previous=amount.valueAsNumber*(currentUnit==='g'?1:portions[+currentUnit][1]);currentUnit=unit.value;if(Number.isFinite(previous))amount.value=previous/(currentUnit==='g'?1:portions[+currentUnit][1]);update();};
+  dialog.querySelectorAll('[data-foodportion]').forEach(b=>b.onclick=()=>{unit.value=b.dataset.foodportion;currentUnit=unit.value;amount.value=1;update();});
+  const useLast=dialog.querySelector('[data-foodlast]');if(useLast)useLast.onclick=()=>{unit.value=currentUnit='g';amount.value=last;update();};
+  dialog.querySelector('form').onsubmit=e=>{e.preventDefault();const g=grams();if(add.disabled||!Number.isFinite(g)||g<.1||g>100000)return;add.disabled=true;if(addFood(idx,g,meal.value)){dialog.close();main.querySelector(`[data-foodinfo="${idx}"]`)?.focus({preventScroll:true});}else{add.disabled=false;error.textContent='Nicht gespeichert. Prüfe die Menge und den verfügbaren Speicherplatz.';}};
+  update();
+ });
 }
 
 /* ---- Barcode-Scanner (Open Food Facts) ----
@@ -1784,8 +1797,9 @@ function wire(){
  main.querySelectorAll("[data-delfood]").forEach(b=>b.onclick=()=>{const i=+b.dataset.delfood;const day=todayKey();const arr=[...(state.foodLog[day]||[])];arr.splice(i,1);state.foodLog={...state.foodLog,[day]:arr};save(K.food,state.foodLog);render();});
  main.querySelectorAll("[data-water]").forEach(b=>b.onclick=()=>{const day=todayKey();const cur=state.waterLog[day]||0;state.waterLog={...state.waterLog,[day]:Math.max(0,cur+ +b.dataset.water)};save(K.water,state.waterLog);buzz(8);render();});
  main.querySelectorAll("[data-addfood]").forEach(b=>b.onclick=()=>{const i=+b.dataset.addfood;const gi=main.querySelector(`[data-gram="${i}"]`);addFood(i,gi?parseFloat(gi.value):100,state.mealFor);});
- main.querySelectorAll("[data-portadd]").forEach(b=>b.onclick=()=>{const[i,g]=b.dataset.portadd.split("|");addFood(+i,+g,state.mealFor);});
+ main.querySelectorAll("[data-portadd]").forEach(b=>b.onclick=()=>{const[i,g]=b.dataset.portadd.split("|");openFoodInfo(+i,{grams:+g});});
  main.querySelectorAll("[data-foodinfo]").forEach(el=>el.onclick=()=>openFoodInfo(+el.dataset.foodinfo));
+ main.querySelectorAll('[data-foodrow]').forEach(row=>row.onclick=e=>{if(e.target.closest('button,input,select,label'))return;openFoodInfo(+row.dataset.foodrow);});
  const search=document.getElementById("foodSearch");if(search)search.oninput=()=>{const q=search.value.toLowerCase();main.querySelectorAll(".food-item").forEach(it=>{it.style.display=it.dataset.name.includes(q)?"":"none";});};
  const ac=main.querySelector("[data-addcustom]");if(ac)ac.onclick=()=>{const nm=(document.getElementById("cfName").value||"").trim();if(!nm)return;const kcal=+document.getElementById("cfKcal").value||0;const p=+document.getElementById("cfP").value||0;const c=+document.getElementById("cfC").value||0;const f=+document.getElementById("cfF").value||0;const n={};FKEYS.forEach(k=>n[k]=0);n.kcal=kcal;n.p=p;n.c=c;n.f=f;state.customFoods=[...state.customFoods,{name:nm,n}];save(K.custom,state.customFoods);render();};
  // Gewicht

@@ -46,6 +46,19 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 ### Hermes 4 (Oktober 2026)
 
+- 4.2: Lebensmittel-Zeilen öffnen ein natives Detail-Bottom-Sheet mit Menge/Einheit,
+  Portionsauswahl (auch halbe/mehrere Portionen), live berechneten Makros, Mahlzeitenwahl
+  und Hinzufügen. Nährwerte pro 100 g und Nährstoffprofil bleiben aufklappbar verfügbar.
+  Portions-Chips öffnen eine Vorauswahl und buchen nicht mehr sofort. Das schnelle +
+  bleibt erhalten. Klicks auf Eingaben/+ lösen kein zusätzliches Öffnen aus.
+- `lastFoodAmount` liest die zuletzt protokollierte gültige Grammmenge je Lebensmittel
+  direkt aus `hermes:food` (Datum und Eintragsreihenfolge). Liste und Detailansicht werden
+  damit vorbelegt; ohne Historie die erste bekannte Portion oder 100 g. Kein neuer
+  Speicherschlüssel, daher auch nach Reload, Backup und offline verfügbar. Nur tatsächlich
+  gespeicherte Einträge zählen: `addFood` aktualisiert den Zustand erst nach erfolgreichem
+  Speichern. Mengen/Nährwerte werden vor Speicherung geprüft und passend skaliert.
+- `test-food-details.cjs` prüft UI, Portionsrechnen, Mahlzeiten, letzte Menge, eigene
+  Lebensmittel, Speicherfehler, Backup/Offline sowie fünf Paletten bei 320/390 px. Cache v12.
 - Training abbrechen: × in der angehefteten Leiste und Button unter „Einheit speichern“.
   `confirmCancelWorkout` fragt per Bottom-Sheet nach. Weitertrainieren/Escape erhalten
   den Entwurf; Bestätigen leert nur die aktive Einheit, stoppt den Timer und entfernt
@@ -311,9 +324,9 @@ hermes:dayplans  automatisch erzeugte Tagespläne je Datum inkl. manueller Ände
   (14/30/90 Tage).
 - `MEALS` / `showReward()` / `QUOTES` — Mahlzeiten-Gruppen im Essen-Tab + Belohnungs-
   Animation (Haken + wechselnder Spruch, Overlay `#reward` statisch im Body, imperativ).
-- `openFoodInfo(idx)` / `foodHealth(f)` — Zutaten-Info (Bottom-Sheet `#exmodal`):
-  Nährwerte pro 100 g + automatisch erzeugte „Warum gut für dich"-Begründungen
-  (Schwellwerte je Nährstoff, skaliert auf alle inkl. eigener Lebensmittel).
+- `openFoodInfo(idx)` / `foodHealth(f)` — Lebensmittel-Detail über das native
+  Bottom-Sheet (`trainingSheet`): Portion/Menge, berechnete Makros, Mahlzeit und Hinzufügen;
+  aufklappbar Nährwerte pro 100 g und Nährstoffprofil, auch für eigene Lebensmittel.
 - `prevShift(date)` / `isRestAfterNight(date)` — „1. Tag nach Nacht = Schlaf" im Heute-Tab.
 - `foodStreak()` — Serie aufeinanderfolgender Tage mit Essens-Einträgen (Heute-Kachel).
 - `ACTS` / `actKcal(met,min,kg)` / `burnedToday()` / `viewActivityPicker()` — Aktivitäten
