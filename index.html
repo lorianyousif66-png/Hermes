@@ -332,7 +332,6 @@ button:focus-visible,summary:focus-visible,[tabindex]:focus-visible{outline:2px 
 .nav{width:calc(100% - 28px);max-width:520px;bottom:calc(12px + env(safe-area-inset-bottom));padding:5px;border:1px solid var(--line);border-radius:23px;box-shadow:0 10px 35px #00000030;z-index:30}.navbtn{border:0;border-radius:17px;margin:0;padding:10px 0;font-size:10px;min-height:58px}.navbtn--on{background:var(--surface2)}.navbtn svg{width:20px;height:20px;margin-bottom:4px}.restbar{max-width:520px;width:calc(100% - 28px);bottom:calc(90px + env(safe-area-inset-bottom));border-radius:16px;z-index:31}
 .acc{border-radius:18px;border-color:var(--hair)}.acc-head{width:100%;border:0;background:none;color:var(--text);font-family:inherit;text-align:left;min-height:60px;font-size:14px;padding:18px}.acc-head .ar{font-size:10px}.ex-name{font-size:17px;letter-spacing:-.3px}.ex-target{font-size:11px}.setrow .check{height:44px;border-radius:12px}.progress{height:5px;border-radius:5px}.histitem,.editday,.pritem{border-radius:14px}.pick-add,.iconbtn{min-width:40px;min-height:40px;border-radius:12px}.pick-item{padding:14px 0}.foodentry{padding:12px 0}.foodentry .fn{font-size:13px}.del{min-height:40px}.exmodal-card{border-radius:26px 26px 0 0;padding:24px;max-width:560px}.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(98px + env(safe-area-inset-bottom));z-index:250;max-width:calc(100% - 36px);width:max-content;padding:12px 18px;border-radius:14px;background:var(--inv-bg);color:var(--inv-fg);font-size:13px;box-shadow:0 8px 24px #0003}.toast:empty{display:none}.draft-note{font-size:11px;color:var(--muted);margin:12px 0 0}
 .restbar.on{display:block;padding:11px 13px}.rest-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}.rest-top .rl{text-transform:none;letter-spacing:0}.rest-track{height:4px;background:#8886;border-radius:5px;overflow:hidden;flex:1}.rest-fill{height:100%;background:currentColor}.rest-actions{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}.restbar .rest-actions button{min-height:44px;padding:5px 2px;font-size:11px}
-@keyframes enter{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}.main.view-enter{animation:enter .22s ease-out}
 @media(min-width:850px){.app{border-left:1px solid var(--hair);border-right:1px solid var(--hair)}.main{padding:24px 28px}.hd{padding-left:32px;padding-right:32px}}
 @media(max-width:360px){.main{padding:14px 12px}.hd{padding-left:16px;padding-right:16px}.card{padding:16px}.page-heading h1{font-size:31px}.dayitem{grid-template-columns:38px 42px minmax(0,1fr) 30px}.ovr{gap:10px}.ringwrap{width:125px}.form-pair{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.main.view-enter{animation:none}*{scroll-behavior:auto!important}}
@@ -363,6 +362,9 @@ body.has-background::before{content:'';position:fixed;inset:0;background-image:v
 @media(prefers-reduced-motion:reduce){.ui-sheet[open],.completion-ring .ring-check{animation:none}button,.set-swipe .setrow,.settings-switch i{transition:none!important}}
 .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 body.has-background .app{background:var(--bg);background:color-mix(in srgb,var(--bg) 60%,transparent)}.exercise-card{box-shadow:none}
+.ui-sheet[open]{animation:none}.exercise-card .check--on{animation:set-confirm-visible .36s cubic-bezier(.2,.8,.2,1)}.restbar.on{animation:timer-arrive .34s cubic-bezier(.2,.8,.2,1)}
+@keyframes set-confirm-visible{0%{transform:scale(.72)}55%{transform:scale(1.12)}100%{transform:scale(1)}}@keyframes timer-arrive{from{opacity:0;translate:0 24px}to{opacity:1;translate:0 0}}
+@media(prefers-reduced-motion:reduce){.exercise-card .check--on,.restbar.on{animation:none}}
 </style>
 </head>
 <body>
@@ -389,7 +391,7 @@ body.has-background .app{background:var(--bg);background:color-mix(in srgb,var(-
 </div></div>
 <script>
 "use strict";
-const APP_VERSION='4.0';
+const APP_VERSION='4.1';
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 /* Kurze Vibration als Bestätigung (Android; anderswo stiller No-Op). */
 function buzz(p='tap'){if(state.settings.haptics===false)return;const patterns={tap:7,select:10,complete:[12,35,18],delete:14,undo:[7,25,7],success:[15,45,25],ready:6};try{if(navigator.vibrate)navigator.vibrate(typeof p==='string'?(patterns[p]||7):p);}catch(e){}}
@@ -857,6 +859,15 @@ const main=document.getElementById("main"),navEl=document.getElementById("nav");
 /* Scroll-Verhalten: innerhalb derselben Ansicht (z. B. Plan bearbeiten) bleibt die
    Scroll-Position erhalten; nur echte Ansichts-Wechsel springen nach oben. */
 let lastViewSig="";
+function reducedMotion(){return matchMedia('(prefers-reduced-motion: reduce)').matches;}
+function animateElement(el,frames,options={}){if(!el?.animate||reducedMotion())return;el.getAnimations().filter(a=>a.id==='hermes-motion').forEach(a=>a.cancel());const animation=el.animate(frames,{duration:360,easing:'cubic-bezier(.2,.8,.2,1)',...options});animation.id='hermes-motion';return animation;}
+function animateViewEntrance(){
+ if(reducedMotion())return;
+ const heading=main.querySelector('.page-heading');if(heading)animateElement(heading,[{opacity:.3,transform:'translateY(12px)'},{opacity:1,transform:'translateY(0)'}]);
+ const stack=[...main.children].find(el=>el.classList.contains('stack'));
+ if(stack)[...stack.children].filter(el=>!el.classList.contains('session-bar')).slice(0,5).forEach((el,i)=>animateElement(el,[{opacity:.25,transform:'translateY(22px)'},{opacity:1,transform:'translateY(0)'}],{delay:i*40,fill:'backwards'}));
+ const ring=main.querySelector('.completion-ring circle:last-child');if(ring)animateElement(ring,[{strokeDashoffset:2*Math.PI*48},{strokeDashoffset:ring.getAttribute('stroke-dashoffset')}],{duration:650,delay:100});
+}
 function render(){
  const sig=[state.tab,state.trainView,state.libFor?"lib":"",state.foodPicker?"fp":"",state.actAdding?"act":"",state.saved?"done":"",workoutFocused()?'session':'',state.templateDraft?.id||''].join("|");
  const y=window.scrollY;
@@ -866,8 +877,8 @@ function render(){
  document.body.classList.toggle('workout-focus',workoutFocused());
  main.innerHTML=(workoutFocused()?'':pageHeading())+v();renderNav();wire();wireUpgrade();
  if(sig===lastViewSig)main.querySelectorAll('[data-disclosure]').forEach(el=>el.open=disclosures.includes(el.dataset.disclosure));
- main.classList.toggle('view-enter',sig!==lastViewSig);
  if(sig===lastViewSig)window.scrollTo(0,y);else window.scrollTo(0,0);
+ if(sig!==lastViewSig)animateViewEntrance();
  lastViewSig=sig;
 }
 const NAVICONS={
@@ -1030,6 +1041,7 @@ function wireUpgrade(){
  const bgRemove=main.querySelector('[data-backgroundremove]');if(bgRemove)bgRemove.onclick=()=>{localStorage.removeItem(K.background);state.background=null;applyBackground();render();notifyUser('Hintergrund entfernt.');};
  const visibility=document.getElementById('backgroundVisibility');if(visibility){visibility.oninput=()=>{state.settings.backgroundVisibility=+visibility.value;document.getElementById('backgroundVisibilityValue').textContent=visibility.value+'%';applyBackground();};visibility.onchange=()=>sS();}
  const haptics=main.querySelector('[data-hapticstoggle]');if(haptics)haptics.onclick=()=>{state.settings.haptics=!state.settings.haptics;sS();haptics.setAttribute('aria-checked',String(state.settings.haptics));if(state.settings.haptics)buzz('select');};
+ const motionPreview=main.querySelector('[data-motionpreview]');if(motionPreview)motionPreview.onclick=()=>{if(reducedMotion()){notifyUser('Dein Gerät hat reduzierte Bewegung aktiviert. Hermes berücksichtigt diese Einstellung.');return;}animateElement(motionPreview,[{opacity:.35,transform:'scale(.88)'},{opacity:1,transform:'scale(1.04)',offset:.6},{opacity:1,transform:'scale(1)'}],{duration:550});};
  main.querySelectorAll('[data-workoutsummary]').forEach(b=>b.onclick=()=>{const h=state.history[+b.dataset.workoutsummary];if(h)trainingSheet('Dein Training',workoutSummary(h,[],true),()=>{});});
  const home=main.querySelector('[data-summaryhome]');if(home)home.onclick=()=>{state.saved=false;state.trainDayId=state.nextDayId;state.log=buildLog(state.nextDayId);state.trainView='log';state.workoutOpen=false;state.workoutMinimized=false;state.workoutScroll=0;render();};
 }
@@ -1121,7 +1133,7 @@ function trainingSheet(title,content,wireContent){
  dialog.innerHTML=`<div class="sheet-handle" aria-hidden="true"></div><div class="sheet-heading"><h2 id="sheetTitle">${esc(title)}</h2><button class="quiet-icon" data-sheetclose aria-label="Schließen">×</button></div>${content}`;
  dialog.querySelector('[data-sheetclose]').onclick=()=>dialog.close();
  dialog.onclick=e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}};
- wireContent(dialog);if(!dialog.open)dialog.showModal();dialog.scrollTop=0;
+ wireContent(dialog);if(!dialog.open)dialog.showModal();dialog.scrollTop=0;animateElement(dialog,[{opacity:.3,transform:'translateY(48px)'},{opacity:1,transform:'translateY(0)'}],{duration:380});
 }
 function showSetTypes(ei,si){const set=state.log[ei].sets[si],hints={normal:'Dein regulärer Arbeitssatz',failure:'Bis zum Muskelversagen',warmup:'Vorbereitung · zählt nicht als Rekord',drop:'Weniger Gewicht, direkt weiter'};
  trainingSheet(`Satz ${si+1} · Satztyp`,SET_TYPES.map(([key,label,name])=>`<button class="sheet-action" data-choosetype="${key}" aria-pressed="${(set.type||'normal')===key}"><b>${label}</b><span>${name}<small>${hints[key]}</small></span></button>`).join(''),dialog=>{dialog.querySelectorAll('[data-choosetype]').forEach(b=>b.onclick=()=>{ensureWorkoutStarted();set.type=b.dataset.choosetype;dialog.close();render();main.querySelector(`[data-settype="${ei}-${si}"]`)?.focus({preventScroll:true});});});
@@ -1590,7 +1602,7 @@ function addWeight(){const inp=document.getElementById("kgInput");if(!inp)return
 function acc(id,title,inner){const open=!!state.acc[id];return `<div class="acc"><button class="acc-head" data-acc="${id}" aria-expanded="${open}">${title}<span class="ar">${open?'−':'+'}</span></button>${open?`<div class="acc-body">${inner}</div>`:''}</div>`;}
 function viewMehr(){
  return `<div class="stack">
-  ${acc("theme","Darstellung",themeEditor())}
+  ${acc("theme","Darstellung",themeEditor()+motionSettings())}
   ${acc("profile","Profil & Ziel",profileEditor())}
   ${acc("goals","Feineinstellungen: Protein & Pause",goalsEditor())}
   ${acc("planning","Tagesplanung",dayPlanningSettings())}
@@ -1679,6 +1691,7 @@ function openExercisePicker(target={}){
 }
 function goalsEditor(){const s=state.settings;return `<span class="lbl-sm">Protein-Faktor (g / kg Körpergewicht)</span><div class="stepper"><button data-prot="-1">−</button><span class="val" id="protVal">${s.protein.toFixed(1)}</span><button data-prot="1">+</button></div><span class="lbl-sm">Pausen-Timer (Sekunden)</span><div class="stepper"><button data-setrest="-1">−</button><span class="val" id="restVal">${s.rest}</span><button data-setrest="1">+</button></div>`;}
 function themeEditor(){return `<h3 class="setting-title">Deine Farbpalette</h3><p class="setting-help">Wähle den Look, in dem du dich wohlfühlst.</p><div class="palette-grid">${Object.entries(THEMES).map(([key,t])=>`<button class="palette-choice" data-settheme="${key}" aria-pressed="${state.settings.theme===key}"><span class="palette-swatch" style="--swatch-bg:${t.bg};--swatch-surface:${t.surface};--swatch-accent:${t.accent}" aria-hidden="true"><i></i><i></i><i></i></span><b>${t.name}</b><small>${t.sub}</small></button>`).join('')}</div><div class="settings-divider"></div><h3 class="setting-title">Dein Hintergrund</h3><p class="setting-help">Ein Lieblingsbild aus deiner Galerie. Es bleibt auf deinem Gerät und wird auch offline angezeigt.</p>${state.background&&validBackground(state.background)?`<img class="background-preview" src="${esc(state.background)}" alt="Dein gewählter Hintergrund"><div class="form-actions"><button class="btn btn-ghost btn-sm" data-backgroundpick>Bild wechseln</button><button class="btn btn-ghost btn-sm" data-backgroundremove>Entfernen</button></div><label class="range-label" for="backgroundVisibility">Sichtbarkeit <span id="backgroundVisibilityValue">${state.settings.backgroundVisibility}%</span></label><input class="settings-range" id="backgroundVisibility" type="range" min="10" max="60" step="5" value="${state.settings.backgroundVisibility}">`:`<button class="btn btn-ghost" data-backgroundpick>Bild aus Galerie wählen</button>`}<input id="backgroundFile" type="file" accept="image/*" hidden><div class="settings-divider"></div><div class="between"><div><h3 class="setting-title">Haptisches Feedback</h3><p class="setting-help" style="margin-bottom:0">Dezente Impulse beim Tippen und Abschließen.</p></div><button class="settings-switch" data-hapticstoggle role="switch" aria-label="Haptisches Feedback" aria-checked="${state.settings.haptics}"><i></i></button></div><p class="setting-help">${typeof navigator.vibrate==='function'?'Die Stärke richtet sich nach deinem Gerät.':'Dein Browser bietet keine Vibration an. Visuelles Feedback ist weiterhin aktiv.'}</p>`;}
+function motionSettings(){return `<div class="settings-divider"></div><h3 class="setting-title">Animationen</h3><p class="setting-help" data-motionstatus>${reducedMotion()?'Dein Gerät hat reduzierte Bewegung aktiviert. Deshalb sind Animationen in Hermes ausgeschaltet.':'Weiche Übergänge beim Seitenwechsel, Öffnen von Menüs und Abschließen von Sätzen.'}</p><button class="btn btn-ghost btn-sm" data-motionpreview>Animation testen</button>`;}
 function histEditor(){if(!state.history.length)return `<p class="muted">Noch keine Einheiten.</p>`;return [...state.history].reverse().map((h,ri)=>{const i=state.history.length-1-ri;const sd=h.exercises.reduce((a,e)=>a+e.sets.filter(s=>s.done).length,0);return `<div class="histitem"><div><button class="hd-l" data-workoutsummary="${i}" aria-label="Zusammenfassung ${esc(h.dayLabel)} ansehen">${esc(h.dayLabel)} <span class="history-open">↗</span></button><div class="hd-d">${fmtFull(h.date)} · ${sd} Sätze${Number.isFinite(h.durationSec)?' · '+fmtElapsed(h.durationSec):''}${h.note?' · Notiz':''}</div></div><button class="del" data-delhist="${i}" aria-label="Training ${esc(h.dayLabel)} löschen">✕</button></div>`;}).join("");}
 function dataEditor(){return `<div class="minirow" style="gap:8px"><button class="btn btn-ghost btn-sm" style="flex:1" data-download="1">Als Datei sichern</button><button class="btn btn-ghost btn-sm" style="flex:1" data-fileimport="1">Datei laden</button></div><input type="file" id="fileInput" accept="application/json,.json" style="display:none"><button class="btn btn-ghost btn-sm" data-export="1" style="margin-top:8px">Exportieren (kopieren)</button><textarea class="dataarea" id="dataArea" placeholder="Zum Importieren Text hier einfügen…" style="margin-top:10px"></textarea><div class="minirow" style="gap:8px;margin-top:8px"><button class="btn btn-ghost btn-sm" style="flex:1" data-import="1">Importieren</button><button class="btn btn-ghost btn-sm" style="flex:1" data-reset="1">Zurücksetzen</button></div><p class="muted sm" style="margin-top:10px">Daten liegen nur auf diesem Gerät. „Als Datei sichern" lädt eine Backup-Datei herunter, „Datei laden" spielt sie wieder ein.</p>`;}
 
@@ -1771,7 +1784,7 @@ function wire(){
  const kg=document.getElementById("kgInput");if(kg)kg.onkeydown=e=>{if(e.key==="Enter")addWeight();};
  main.querySelectorAll("[data-delbw]").forEach(b=>b.onclick=()=>{state.bodyweight=state.bodyweight.filter(x=>x.date!==b.dataset.delbw);save(K.weight,state.bodyweight);render();});
  // Mehr accordions
- main.querySelectorAll("[data-acc]").forEach(h=>h.onclick=()=>{state.acc[h.dataset.acc]=!state.acc[h.dataset.acc];render();});
+ main.querySelectorAll("[data-acc]").forEach(h=>h.onclick=()=>{const id=h.dataset.acc;state.acc[id]=!state.acc[id];render();if(state.acc[id]){const body=main.querySelector(`[data-acc="${id}"]`).nextElementSibling;animateElement(body,[{opacity:.2,transform:'translateY(12px)'},{opacity:1,transform:'translateY(0)'}],{duration:320});}});
  // profile
  main.querySelectorAll("[data-sex]").forEach(b=>b.onclick=()=>{state.profile.sex=b.dataset.sex;sPr();render();});
  const pfAge=document.getElementById("pfAge");if(pfAge)pfAge.oninput=()=>{state.profile.age=+pfAge.value||0;sPr();};
@@ -1891,6 +1904,7 @@ setInterval(()=>{const el=document.getElementById('workoutElapsed');if(el&&state
 window.addEventListener('offline',()=>notifyUser('Du bist offline. Deine Einträge bleiben auf diesem Gerät.'));
 window.addEventListener('online',()=>notifyUser('Wieder online.'));
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeExInfo();});
+matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',()=>{if(reducedMotion())document.getAnimations().filter(a=>a.id==='hermes-motion').forEach(a=>a.cancel());const status=main.querySelector('[data-motionstatus]');if(status)status.textContent=reducedMotion()?'Dein Gerät hat reduzierte Bewegung aktiviert. Deshalb sind Animationen in Hermes ausgeschaltet.':'Weiche Übergänge beim Seitenwechsel, Öffnen von Menüs und Abschließen von Sätzen.';});
 document.addEventListener('click',e=>{const button=e.target.closest('button');if(!button||button.disabled||button.matches('[data-check],[data-save],[data-endsession],[data-water],[data-settheme],[data-removeset],[data-undoset],[data-hapticstoggle]'))return;buzz('tap');});
 </script>
 </body>

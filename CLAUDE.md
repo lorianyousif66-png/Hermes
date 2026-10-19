@@ -46,6 +46,15 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 ### Hermes 4 (Oktober 2026)
 
+- 4.1: Seitenanimationen werden bei jedem echten Ansichtswechsel neu gestartet
+  (`animateViewEntrance`/Web Animations). Vorher konnte die unverändert gesetzte
+  CSS-Klasse einen erneuten Start verhindern. Kurze Staffelung der ersten Karten,
+  deutlichere Menü-/Satz-/Timer-Übergänge. Keine animierte Transformation des gesamten
+  Main-Containers, damit angeheftete Steuerelemente stabil bleiben.
+- Mehr → Darstellung → Animation testen zeigt eine Vorschau und erklärt, wenn das
+  Gerät reduzierte Bewegung fordert. Diese Einstellung bleibt respektiert; keine
+  erzwungenen Animationen und keine neue gespeicherte Präferenz. Laufende Animationen
+  werden bei Aktivierung reduzierter Bewegung abgebrochen. Cache v11.
 - Versionsnummer ausschließlich unten unter Mehr/Einstellungen (`APP_VERSION`),
   nicht in Seitenüberschriften. Der Offline-Hinweis in der Kopfzeile bleibt erhalten.
 - Schichtmodus samt Auswahl und Rhythmus in Mehr → Tagesplanung, standardmäßig
