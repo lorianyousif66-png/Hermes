@@ -1590,16 +1590,15 @@ function addWeight(){const inp=document.getElementById("kgInput");if(!inp)return
 function acc(id,title,inner){const open=!!state.acc[id];return `<div class="acc"><button class="acc-head" data-acc="${id}" aria-expanded="${open}">${title}<span class="ar">${open?'−':'+'}</span></button>${open?`<div class="acc-body">${inner}</div>`:''}</div>`;}
 function viewMehr(){
  return `<div class="stack">
-  <section class="card"><div class="section-top"><div><h2>Tagesplanung</h2><p>Dein Alltag, dein Tempo.</p></div></div><div class="between"><b>Schichtmodus</b><button class="chip${shiftModeEnabled()?' chip--on':''}" role="switch" aria-label="Schichtmodus" aria-checked="${shiftModeEnabled()}" data-shiftmode>${shiftModeEnabled()?'Ein':'Aus'}</button></div><p class="muted sm" style="margin-bottom:0">${shiftModeEnabled()?'Dein Tagesplan berücksichtigt Früh-, Spät- und Nachtschichten.':'Dein Tagesplan konzentriert sich auf Training, Essen, Bewegung und eigene Vorhaben.'}</p></section>
   ${acc("theme","Darstellung",themeEditor())}
   ${acc("profile","Profil & Ziel",profileEditor())}
-  ${shiftModeEnabled()?shiftTodaySettings():''}
-  ${shiftModeEnabled()?acc("rota","Schichtplan (Rhythmus)",rotaEditor()):''}
   ${acc("goals","Feineinstellungen: Protein & Pause",goalsEditor())}
+  ${acc("planning","Tagesplanung",dayPlanningSettings())}
   ${acc("data","Daten sichern",dataEditor())}
   <p class="tip" data-appversion>Hermes · Version ${APP_VERSION}</p>
  </div>`;
 }
+function dayPlanningSettings(){return `<div class="stack"><div><div class="between"><h3 class="setting-title">Schichtmodus</h3><button class="settings-switch" role="switch" aria-label="Schichtmodus" aria-checked="${shiftModeEnabled()}" data-shiftmode><i></i></button></div><p class="setting-help" style="margin-bottom:0">${shiftModeEnabled()?'Passe deinen Tagesplan an deine Arbeitszeiten an.':'Aktiviere diese Option, wenn du deinen Tag nach Früh-, Spät- oder Nachtschichten planen möchtest.'}</p></div>${shiftModeEnabled()?shiftTodaySettings()+acc('rota','Schichtrhythmus',rotaEditor()):''}</div>`;}
 function shiftTodaySettings(){
  const day=todayKey(),shift=effShift(day),chips=Object.entries(SHIFTS).map(([k,v])=>`<button class="chip${shift===k?' chip--on':''}" data-shift="${k}">${v.label}</button>`).join('');
  const preview=rotaShift(day)?Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()+i);const s=effShift(dateKey(d));return `<div class="rotaday${i===0?' rotaday--today':''}"><span class="rd-wd">${i===0?'Heute':d.toLocaleDateString('de-DE',{weekday:'short'})}</span><span class="rd-s">${s?SHIFTS[s]?.label||'—':'—'}</span></div>`;}).join(''):'';

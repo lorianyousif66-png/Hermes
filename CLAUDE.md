@@ -48,6 +48,8 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 - Versionsnummer ausschließlich unten unter Mehr/Einstellungen (`APP_VERSION`),
   nicht in Seitenüberschriften. Der Offline-Hinweis in der Kopfzeile bleibt erhalten.
+- Schichtmodus samt Auswahl und Rhythmus in Mehr → Tagesplanung, standardmäßig
+  eingeklappt unter den Feineinstellungen. Keine herausgestellte Tagesplanung-Karte.
 - Darstellung unter Mehr: fünf Paletten mit Vorschau; `readSettings` migriert alte
   Einstellungen ohne Änderung des bisherigen Themes. `haptics` standardmäßig true,
   `backgroundVisibility` 25 (10–60). `buzz` respektiert die Einstellung für alle Aufrufe;
