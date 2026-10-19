@@ -30,8 +30,10 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
    `<script>`-Nachladen zur Laufzeit) — sonst keine Libraries einbauen.
 2. **Kein `localStorage`-Ersatz nötig** — läuft echt im Browser, `localStorage` ist
    erlaubt und gewollt (Daten liegen nur auf dem Gerät).
-3. **Design: schlicht, Schwarz-Weiß (monochrom).** Zwei Themes: `obsidian` (dunkel）
-   und `marmor` (hell). KEINE Akzentfarben. Klare, moderne Schrift (Inter).
+3. **Design: schlicht, standardmäßig monochrom.** `obsidian` (dunkel) und `marmor`
+   (hell) behalten ihre ursprünglichen Farbwerte. Seit 4.0 auf ausdrücklichen Nutzerwunsch
+   optionale Paletten `ocean`, `forest`, `purple` sowie ein persönliches Hintergrundbild.
+   Obsidian bleibt Standard. Alle Farben aus Theme-Variablen, klare Schrift (Inter).
 4. **Name = "Hermes", sonst KEIN griechisch-mythologisches Vokabular.** Frühere
    Versionen hatten Begriffe wie "Arena", "Tempel", "Anapausis", Götternamen,
    griechische Buchstaben — das wurde bewusst entfernt. Bitte nicht wieder einbauen.
@@ -41,6 +43,32 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
    Browser testen (nicht nur Syntax).
 
 ## Wie testen
+
+### Hermes 4 (Oktober 2026)
+
+- Darstellung unter Mehr: fünf Paletten mit Vorschau; `readSettings` migriert alte
+  Einstellungen ohne Änderung des bisherigen Themes. `haptics` standardmäßig true,
+  `backgroundVisibility` 25 (10–60). `buzz` respektiert die Einstellung für alle Aufrufe;
+  differenzierte Impulse für Auswahl, Abschluss, Löschen/Undo. Ohne Browser-Vibration
+  nur visuelles Feedback, kein vorgetäuschter Erfolg. Reduzierte Bewegung respektieren.
+- Nutzerfoto wird lokal dekodiert, auf maximal 1440 px verkleinert und als JPEG unter
+  800.000 Zeichen in `hermes:background` gespeichert. Keine Uploads, keine neue Library.
+  Optionaler Farb-Scrim erhält die Lesbarkeit. Sichtbarkeit per Regler, Entfernen jederzeit.
+  Backup/Import/Reset unterstützen den neuen Schlüssel; Import erlaubt nur begrenzte
+  JPEG/PNG/WebP-Daten, keine SVGs/URLs. Bei Speicherfehler bleibt das vorige Foto erhalten.
+- Swipe malt höchstens einmal je Animationsframe, löscht mit kurzer Ausblend-/Höhenanimation
+  und bindet die Löschung an das ursprüngliche Satzobjekt. Abbruch/vertikal/letzter Satz
+  bleiben geschützt; andere Zeilen rücken flüssig nach. Offenliegende Löschaktion schließt
+  bei Tipp außerhalb. `removingSets` + `flushSetRemovals` schließen vorgemerkte Änderungen
+  vor Trainingsabschluss oder Verlassen der App ab, damit die Animation keine Daten verliert.
+- `workoutSummary` zeigt echte Dauer (bei Alt-Daten „—“), trainierte Übungen, erledigte Sätze,
+  Anteil und kg-Volumen aus erledigten Arbeitssätzen ohne Aufwärmen. Körpergewicht/Zeit und
+  unerledigte Sätze werden nicht als kg gezählt. Zuspruch und Rekorde beim Abschluss;
+  gespeicherte Zusammenfassungen auch über den Verlauf abrufbar. Zurück zur Workout-Übersicht
+  erzeugt keinen neuen laufenden Entwurf. Keine doppelten Einheiten bei erneutem Abschluss.
+- `test-personalisation.cjs`: echte Bildauswahl/Komprimierung, Reload, Backup, ungültiger Import,
+  Speicherplatzfehler, Haptik-Schalter, fünf Paletten, Zusammenfassungswerte und mobile Breiten.
+  Bestehende Touch-/Vorlagen-/Tagesplan-/Offline-Prüfungen weiterhin nutzen. Cache v10.
 
 ### Hermes 3 (Oktober 2026)
 
@@ -188,7 +216,8 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 ```
 hermes:plan      Trainingsplan (Tage + Übungen)
-hermes:settings  { theme, rest, protein, shiftMode }
+hermes:settings  { theme, rest, protein, shiftMode, haptics, backgroundVisibility }
+hermes:background lokal verkleinertes Hintergrundbild (Data-URL, optional)
 hermes:profile   { sex, age, height, activity, goal }
 hermes:bw        Gewichtsverlauf [{date, kg}]
 hermes:hist      Trainings-Historie
