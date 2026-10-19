@@ -46,6 +46,17 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 ### Hermes 4 (Oktober 2026)
 
+- 4.3: Lebensmittel/Marken über explizites „Online suchen“ oder Enter finden. Lokaler
+  Filter bleibt sofort/offline, keine Online-Anfragen beim Tippen. OFF-Legacy-Volltextsuche
+  (`/cgi/search.pl`), da der neuere Suchdienst bei Live-Prüfung kein Browser-CORS erlaubt.
+  OFF selbst lieferte beim Live-Test 503; keine Umgehungs-Proxys oder Backend-Abhängigkeit.
+  15-s-Timeout, Abbruch veralteter Anfragen, 5-min-Sitzungscache, maximal 8 Anfragen/Minute
+  und mindestens 6,5 s Abstand; explizite weitere Seiten. Offline/Fehler/429/Leerzustand.
+  Vorschau mit Herkunft/ODbL; erst „Übernehmen“ speichert transaktional unter `hermes:custom`,
+  Barcode-/Namens-Deduplizierung. Danach gewohnte Mengenansicht, keine automatische Buchung.
+  Nur vollständige Kalorien/Makros, valide Zahlen, kJ-Umrechnung; unbekannte Mikros markiert.
+  Gramm-Portionen aus Verpackungsangabe, keine Gleichsetzung von ml und g. Metadaten bleiben
+  nach Backup/Reload erhalten. Tests außerhalb Repo: `test-food-online.cjs`; Cache v13.
 - 4.2: Lebensmittel-Zeilen öffnen ein natives Detail-Bottom-Sheet mit Menge/Einheit,
   Portionsauswahl (auch halbe/mehrere Portionen), live berechneten Makros, Mahlzeitenwahl
   und Hinzufügen. Nährwerte pro 100 g und Nährstoffprofil bleiben aufklappbar verfügbar.
