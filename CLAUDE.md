@@ -46,6 +46,23 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 ### Hermes 4 (Oktober 2026)
 
+- 4.6: Heute übernimmt die freigegebene Vorschau mit Ernährungsfokus, ohne Beispieldaten.
+  Reihenfolge: Kalorien/Makros mit direktem Essen-Eintragen → Training/Tagesplan-Kacheln
+  und echte Montag–Sonntag-Woche → Wasser mit füllbarem Glas → Aktivität/Tagesplan-Zugriff.
+  Keine alte Fokus-/Motivationskarte, keine Mahlzeitenliste auf Heute. `foodOverview`
+  teilt die Berechnung mit dem Essen-Tab; Dashboard zeigt rechts Protein, Essen unverändert
+  Aktivität. Ziel minus Essen bleibt unverändert, keine zusätzlichen Aktivitätskalorien.
+  `todayTrainingDashboard` nutzt Verlauf/Entwurf/Rotation und echte Tagesplan-Punkte;
+  erste oder leere Daten werden ehrlich dargestellt. Start/Fortsetzen verwendet denselben
+  `data-begin`-Ablauf wie Training und wechselt ausdrücklich in den Training-Tab.
+  Wochenzählung anhand lokaler Kalendertage, mehrere Einheiten pro Tag möglich, Zukunft
+  ausgeschlossen. Wasserglas 0–100% des Ziels, echte Menge auch oberhalb des Ziels sichtbar;
+  ohne Gewicht/Referenz kein erfundener Füllstand. Bisherige Speicherformate unverändert.
+  Vollständiger Tagesplan unter nativem Details-Element, per Kachel öffnen/anscrollen;
+  Bearbeiten, Befehle und Undo erhalten. Originalpaletten und Bewegungspräferenz bleiben.
+  `test-today-dashboard.cjs` außerhalb Repo: echte Summen, Wochenwechsel/DST, Training
+  Start/Minimieren/Reload/Fortsetzen, Aufgaben, Wasser/Offline und 20 Theme/Breite-Checks.
+  Bestehende Essen-/Fortschritt-/Tagesplan-Tests weiter nutzen. Cache v16.
 - 4.5: Essen-Layout nach Bildreferenz, alle Theme-Farben unverändert. Gemeinsame
   Übersichtskarte mit 270°-Kalorienring (übrig/darüber), gegessen, geschätzter Aktivität
   und drei Makrobalken. Berechnung unverändert: Ziel minus Essen, Aktivität separat.
@@ -256,9 +273,9 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 ## Tabs / Views
 
-- `heute` — **oben Übersicht** (`ovrCard`): Kalorien-Ring + „Gegessen"/„Verbraucht"
-  daneben, Buttons „+ Aktivität" / „Essen". Darunter Trainings-Empfehlung, Mini-Stats
-  (inkl. Essens-Serie `foodStreak()`). Die Fokus-Karte richtet sich nur nach Training/Erholung.
+- `heute` — Ernährungs-Dashboard (`foodOverview`), Training/Tagesplan-Kacheln mit
+  Wochenübersicht, Wasser mit Glas und Aktivität. Kein Mahlzeiten-Duplikat/Fokus-Hero.
+  Tagesplan vollständig aufklappbar. Ohne Gewicht bleibt `ovrCard` als Einrichtungshilfe.
   Schichtbedienung gehört ausschließlich in die Einstellungen; bei aktiviertem Modus kann
   `isRestAfterNight` weiterhin die Uhrzeiten der Tagesvorlage anpassen.
   „+ Aktivität" öffnet den Aktivitäten-Picker (`viewActivityPicker`, `state.actAdding`):
