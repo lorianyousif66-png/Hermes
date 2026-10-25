@@ -46,6 +46,27 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 ### Hermes 4 (Oktober 2026)
 
+- 4.4: Tab „Gewicht“ heißt „Fortschritt“, interne ID `gewicht` bleibt erhalten.
+  Drei Bereiche Training/Ernährung/Körper; 7/30/90 Tage oder Gesamt. Bestehende
+  Trainings-, Essens- und Gewichtsdaten werden nur gelesen, nicht migriert/ersetzt.
+  `progressWorkouts` rekonstruiert Bestwerte über die gesamte Historie vor Zeitfilterung;
+  erste Bestwerte separat, Verbesserungen je Übung/Einheit-Art. Volumen nur erledigte
+  kg-Arbeitssätze ohne Aufwärmen. Charts: Tagesvolumen/Sätze, Übungsleistung (geschätztes
+  1RM bei kg), Kalorien/Makros, Gewicht und sieben Umfangsstellen. SVGs ohne Bibliothek,
+  echte Datumsabstände, Werte auch als Tabelle zugänglich. Ernährungslücken nicht als 0.
+  Ernährungsdurchschnitt nur über Tage mit Einträgen, keine Mangeldiagnose/Gesundheitsscore.
+  `knownNutrients` als Snapshot bei neuen Food-Logs; alte Einträge konservativ ausgewertet:
+  positive bekannte Werte/integrierte Lebensmittel vs. unbekannte Custom-Mikronährstoffe.
+  Fehlende Angaben nicht mit Null verwechseln, bei Teildaten keine %-Bedarfsdeckung.
+  Quellen/Erwachsenenreferenzen und Vitamin-D-/Eisen-Grenzen stehen direkt im UI.
+  `hermes:measures`: [{date,values:{waist,belly,hip,chest,arm,thigh,calf}}], optionale
+  cm-Werte 1–300, eindeutiges gültiges Kalenderdatum. Formular: Datum/Bestandswerte,
+  Bearbeiten/Bestätigungs-Löschen, transaktionales Speichern; unsaved Formulardaten
+  bleiben bei Chartwechsel im UI-Entwurf erhalten. Backup/Import/Reset/Reload integriert.
+  Gewichtsschreibvorgänge ebenfalls erst nach erfolgreichem Speichern übernehmen.
+  `test-progress.cjs` außerhalb Repo prüft Berechnungen, Zeiträume, lokale Tagesgrenzen,
+  Datenlücken, Messungen/Quota/Backups/offline sowie 60 Theme/Breite/Bereich-Kombinationen.
+  Cache v14. Heutige Überschrift ist weiterhin das aktuelle Datum ohne doppelte Zeile.
 - 4.3: Lebensmittel/Marken über explizites „Online suchen“ oder Enter finden. Lokaler
   Filter bleibt sofort/offline, keine Online-Anfragen beim Tippen. OFF-Legacy-Volltextsuche
   (`/cgi/search.pl`), da der neuere Suchdienst bei Live-Prüfung kein Browser-CORS erlaubt.
@@ -247,8 +268,9 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
   Außerdem: Barcode-Scan, Portions-Chips, eigene Lebensmittel, 7-Tage-Wochenverlauf
   (`weekCard`), Makro-Verlaufskurve (`trendCard`, Metrik `state.trendMetric` und
   Zeitraum `state.trendDays` 14/30/90 umschaltbar).
-- `gewicht` — Gewicht eintragen, Verlaufskurve (selbstgezeichnetes SVG, inkl.
-  Ø kg/Woche ab 7 Tagen Spannweite), Einträge löschen.
+- `gewicht` — „Fortschritt“: Training/Ernährung/Körper mit Zeitraumfilter, Diagrammen
+  und Auswertungen. Gewicht eintragen, Verlauf (inkl. Ø kg/Woche ab 7 Tagen), Umfangs-
+  messungen pro Datum eintragen/bearbeiten/löschen. Bestehende Navigation-ID bleibt.
 - `mehr` — **nur Einstellungen** als Akkordeon: Darstellung (Theme), Profil & Ziel
   (`profileEditor`, inkl. Ernährungsziel), Feineinstellungen Protein/Pause (`goalsEditor`),
   Daten sichern (Datei-Download/-Upload + Copy-Export/Import/Reset). Trainingsplan &
@@ -262,6 +284,7 @@ hermes:settings  { theme, rest, protein, shiftMode, haptics, backgroundVisibilit
 hermes:background lokal verkleinertes Hintergrundbild (Data-URL, optional)
 hermes:profile   { sex, age, height, activity, goal }
 hermes:bw        Gewichtsverlauf [{date, kg}]
+hermes:measures  Körperumfänge [{date, values:{waist,belly,hip,chest,arm,thigh,calf}}] in cm
 hermes:hist      Trainings-Historie
 hermes:last      letzte Bestwerte pro Übung (für "Letztes Mal")
 hermes:next      ID des nächsten Trainingstags (Rotation)
