@@ -46,6 +46,19 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 ### Hermes 4 (Oktober 2026)
 
+- 4.5: Essen-Layout nach Bildreferenz, alle Theme-Farben unverändert. Gemeinsame
+  Übersichtskarte mit 270°-Kalorienring (übrig/darüber), gegessen, geschätzter Aktivität
+  und drei Makrobalken. Berechnung unverändert: Ziel minus Essen, Aktivität separat.
+  „Details“ öffnet Tageswerte inklusive Ballaststoffen/Wasser im nativen Bottom-Sheet.
+  Eine Mahlzeiten-Karte mit vier kompakten Zeilen, monochromen SVG-Icons und separaten
+  44px-Plus-Buttons; native Details-Zeilen öffnen Einträge/Löschen/„Wie gestern“.
+  Aufgeklappte Zeilen bleiben bei Re-Render in derselben Ansicht offen. „Auswertung“
+  führt zu Fortschritt → Ernährung. Wasser danach; alte Trends und Mikros aufklappbar.
+  Suche, Barcode, Portionen, letzte Mengen und Speicherformate bleiben erhalten.
+  Kopieren/Löschen/Wasser übernehmen Änderungen erst nach erfolgreicher Speicherung.
+  `test-food-layout.cjs` außerhalb Repo prüft Layout, vier Mahlzeiten-Wege, Details,
+  Kopie/Löschen, Wasser, Speicherfehler, überzogenes Ziel, unveränderte Originalpaletten,
+  20 Theme/Breite-Kombinationen und Offline. Cache v15.
 - 4.4: Tab „Gewicht“ heißt „Fortschritt“, interne ID `gewicht` bleibt erhalten.
   Drei Bereiche Training/Ernährung/Körper; 7/30/90 Tage oder Gesamt. Bestehende
   Trainings-, Essens- und Gewichtsdaten werden nur gelesen, nicht migriert/ersetzt.
