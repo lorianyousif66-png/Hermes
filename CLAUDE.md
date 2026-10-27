@@ -46,6 +46,22 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 ### Hermes 4 (Oktober 2026)
 
+- 4.7: Barcode öffnet nach erfolgreichem Produkttreffer automatisch `openFoodInfo`,
+  keine automatische Tagebuchbuchung. Gemeinsamer OFF-Adapter für Suche/Scanner mit
+  vollständigen Makros, Portions-/Packungsgrößen (normalisierte OFF-Felder, sonst
+  explizite g/kg/ml/cl/l-Angaben). Multipacks nur mit normalisiertem Gesamtinhalt.
+  `unit: 'ml'` für Volumen, sonst g; Nährwerte entsprechend pro 100 ml/g, keine
+  ml→g-Umrechnung. Portionschips plus Packung, beim ersten Scan Packung vorausgewählt,
+  später letzte tatsächlich gespeicherte Menge derselben Einheit. Fehlende Größen
+  ausdrücklich unbekannt, keine erfundene Tassen-/Portionsgröße. Alte Logs bleiben g.
+  Historisches Zahlenfeld `grams` bleibt aus Kompatibilität erhalten; bei neuen ml-Logs
+  bezeichnet es die Menge in `unit: 'ml'`. Summen verwenden weiterhin absolute Nährwerte.
+  Listen/Detail/Tagebuch zeigen die richtige Einheit, Backup/Import erhalten sie.
+  Scanner: Abbruch/15-s-Limit, veraltete Antworten ignoriert, Speicherung transaktional,
+  Barcode-Deduplizierung, neue gespeicherte Produkte auch offline direkt öffnen.
+  `test-barcode-portions.cjs` außerhalb Repo: automatisches Sheet, g/ml, halbe Portionen,
+  Packung/letzte Menge, echte Berechnungen, kein Auto-Log, Quota/Abbruch, Backup/offline.
+  Bestehende Food-Detail-/Online-/Layout-Tests ergänzen dies. Cache v17.
 - 4.6: Heute übernimmt die freigegebene Vorschau mit Ernährungsfokus, ohne Beispieldaten.
   Reihenfolge: Kalorien/Makros mit direktem Essen-Eintragen → Training/Tagesplan-Kacheln
   und echte Montag–Sonntag-Woche → Wasser mit füllbarem Glas → Aktivität/Tagesplan-Zugriff.
