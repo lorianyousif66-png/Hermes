@@ -46,23 +46,9 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 ### Hermes 4 (Oktober 2026)
 
-- 4.9: Globaler Header-Button „Hey Hermes“ für optionalen Vordergrund-Sprachmodus.
-  Pro Sitzung ausdrücklich über erklärendes Sheet aktivieren; Mikrofonstatus und
-  Beenden-Button immer sichtbar. Kein automatischer Start beim Öffnen/Reload und
-  kein gespeicherter Aktivierungszustand. `SpeechRecognition.continuous=true`, kein
-  automatisches Wiederstarten nach Browser-Ende/Fehler. Audio kann schon vor dem
-  Aktivierungswort zum Browser-Sprachdienst gehen, vor Aktivierung offengelegt.
-  Nur finale Ergebnisse nach „Hey Hermes“ verarbeiten; ganzer Satz oder nächstes
-  Ergebnis innerhalb 10 s. Sonstige Sprache ignoriert, nicht gespeichert.
-  Befehl beendet das Zuhören und geht über dieselbe korrigierbare Lebensmittel-
-  Mengenprüfung wie 4.8, keine automatische Buchung. Mikrofon endet bei Hintergrund,
-  Pagehide, Trainings-Fokus, Dialogen, Scanner und manuellem Sprachmodus; normale
-  Tabwechsel im Vordergrund dürfen weiter zuhören. Fehler/Browser-Ende sichtbar,
-  keine Zusage für Siri-/Hintergrund-Verhalten oder Zuverlässigkeit auf iOS.
-  `test-wake-speech.cjs` außerhalb Repo: simulierte Recognition-Events, expliziter Start,
-  Status/Stop, Wakewort/zweiteiliger Satz, Ignorieren fremder Sprache, späte Ergebnisse,
-  Ende ohne Neustart, Berechtigung, Hintergrund/Reload und zehn Palette/Breite-Checks.
-  Normale Sprachtests bleiben grün. Echte Audioerkennung auf Handy noch testen. Cache v19.
+- Rückkehr zu 4.8 auf Nutzerwunsch: „Hey Hermes“-Modus aus 4.9 vollständig entfernt.
+  Normale Spracheingabe und Barcode-Funktionen bleiben. App-Code entspricht wieder
+  f7c9a37; Cache bewusst vorwärts auf v20, damit installierte Geräte 4.9 ersetzen.
 - 4.8 (November): Essen-Übersicht und Lebensmittel-Picker bieten „Essen per Sprache
   eintragen“. Natives Bottom-Sheet mit explizitem Mikrofonstart, deutschem Web Speech,
   korrigierbarem Text und Tippen/Tastaturdiktat als Alternative. Browser-Onlinedienst
