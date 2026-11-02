@@ -1650,7 +1650,7 @@ function startWakeListening(){
  let r;try{r=new SR();}catch{stopWakeListening('Sprachmodus konnte nicht gestartet werden.');return;}
  wakeRecognition=r;r.lang='de-DE';r.continuous=true;r.interimResults=false;r.maxAlternatives=1;
  document.getElementById('wakeToggle').textContent='Mikrofon aktiv';document.getElementById('wakeToggle').setAttribute('aria-pressed','true');document.getElementById('wakeStatus').hidden=false;
- document.getElementById('wakeMessage').textContent='Mikrofon aktiv · Sag „Hey Hermes, füge eine Zwiebel hinzu“. '; 
+ document.getElementById('wakeMessage').textContent='Mikrofon aktiv · Sag „Hey Hermes, füge eine Zwiebel hinzu“.';
  r.onresult=e=>{
   if(wakeRecognition!==r||document.hidden)return;
   for(let i=e.resultIndex||0;i<e.results.length;i++){
