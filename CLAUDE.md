@@ -46,6 +46,22 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 ### Hermes 4 (Oktober 2026)
 
+- 4.8 (November): Essen-Übersicht und Lebensmittel-Picker bieten „Essen per Sprache
+  eintragen“. Natives Bottom-Sheet mit explizitem Mikrofonstart, deutschem Web Speech,
+  korrigierbarem Text und Tippen/Tastaturdiktat als Alternative. Browser-Onlinedienst
+  vor Aufnahme erklärt; Hermes speichert kein Audio. Ein Lebensmittel pro Satz,
+  lokaler Parser für Zahlen/Wortzahlen/halbe Mengen, g/kg/ml/l und bekannte Portionen,
+  einfache Pluralformen und optionale Mahlzeit. Eindeutiger Treffer öffnet bestehendes
+  `openFoodInfo`; mehrere Treffer werden zur Auswahl angeboten, unbekannte führen auf
+  Wunsch zur Suche (keine automatische Online-Anfrage). Nie automatisch buchen.
+  Zwiebel hat explizit geschätztes Stückgewicht 100 g; Stück-/Portionsgewichte in der
+  Prüfansicht als Richtwert. Fehlendes Stückgewicht oder falsche g/ml-Basis erfordert
+  Eingabe statt Konvertierung/Erfindung. Kein neuer Speicherschlüssel/keine Library.
+  Mikrofonabbruch bei Schließen, Sheet-/Ansichtswechsel und Hintergrund; verspätete
+  Ergebnisse ignoriert, Berechtigungs-/Netzwerk-/Leerergebnis-Fallback. `test-food-speech.cjs`
+  außerhalb Repo prüft UI mit simulierten Recognition-Ereignissen, Parser, Mengen,
+  Mehrdeutigkeit, Abbruch, Tippen, Offline und zehn Theme/Breite-Kombinationen.
+  Echte Audioerkennung benötigt zusätzlichen Test auf dem jeweiligen Handy. Cache v18.
 - 4.7: Barcode öffnet nach erfolgreichem Produkttreffer automatisch `openFoodInfo`,
   keine automatische Tagebuchbuchung. Gemeinsamer OFF-Adapter für Suche/Scanner mit
   vollständigen Makros, Portions-/Packungsgrößen (normalisierte OFF-Felder, sonst

@@ -397,7 +397,7 @@ body.has-background .app{background:var(--bg);background:color-mix(in srgb,var(-
 </div></div>
 <script>
 "use strict";
-const APP_VERSION='4.7';
+const APP_VERSION='4.8';
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 /* Kurze Vibration als Bestätigung (Android; anderswo stiller No-Op). */
 function buzz(p='tap'){if(state.settings.haptics===false)return;const patterns={tap:7,select:10,complete:[12,35,18],delete:14,undo:[7,25,7],success:[15,45,25],ready:6};try{if(navigator.vibrate)navigator.vibrate(typeof p==='string'?(patterns[p]||7):p);}catch(e){}}
@@ -628,6 +628,7 @@ const FKEYS=["kcal","p","c","f","fib","vc","vd","ca","fe","mg","k"];
 function foodObj(a){const n={};FKEYS.forEach((k,i)=>n[k]=a[i+1]);return {name:a[0],n};}
 /* Portionsvorlagen je Lebensmittel: [Label, Gramm]. Optional — nur für gängige Stück-/Portionsgrößen. */
 const PORTIONS={
+ "Zwiebel":[["1 Stück (mittel, geschätzt)",100]],
  "Eier":[["1 Ei",60],["2 Eier",120]],
  "Banane":[["1 Stück",120]],
  "Apfel":[["1 Stück",150]],
@@ -876,6 +877,7 @@ function animateViewEntrance(){
  const ring=main.querySelector('.completion-ring circle:last-child');if(ring)animateElement(ring,[{strokeDashoffset:2*Math.PI*48},{strokeDashoffset:ring.getAttribute('stroke-dashoffset')}],{duration:650,delay:100});
 }
 function render(){
+ stopFoodSpeech();
  if(state.tab!=='essen'||!state.foodPicker){cancelFoodSearch();foodOnline.query='';foodOnline.results=[];foodOnline.message='';foodOnline.page=0;foodOnline.more=false;}
  const sig=[state.tab,state.trainView,state.libFor?"lib":"",state.foodPicker?"fp":"",state.actAdding?"act":"",state.saved?"done":"",workoutFocused()?'session':'',state.templateDraft?.id||''].join("|");
  const y=window.scrollY;
@@ -1028,6 +1030,7 @@ function pageHeading(){
 }
 function taskEditorForm(item){return `<form id="taskForm" class="inline-form"><label>Was steht an?<input id="taskTitle" class="inp" style="text-align:left" required maxlength="100" value="${esc(item?.text||'')}" placeholder="Zum Beispiel: Einkaufen"></label><div class="form-pair"><label>Uhrzeit<input id="taskTime" class="inp" type="time" required value="${esc(item?.time||'17:00')}"></label><label>Tag<select id="taskOffset" class="sel"><option value="0">Heute</option><option value="1" ${item?.dayOffset?'selected':''}>Folgetag (nach Mitternacht)</option></select></label></div><div class="form-actions"><button type="button" class="btn btn-ghost btn-sm" data-taskcancel>Abbrechen</button><button class="btn btn-sm" type="submit">Speichern</button></div></form>`;}
 function wireUpgrade(){
+ main.querySelectorAll('[data-foodspeak]').forEach(b=>b.onclick=openFoodSpeech);
  wireSetSwipes();
  wireProgress();
  const foodSummary=main.querySelector('[data-foodsummary]');if(foodSummary)foodSummary.onclick=showFoodSummary;
@@ -1141,6 +1144,7 @@ function trainingHome(nav){
  return `<div class="stack">${nav}<section class="card routine-feature"><div class="eyebrow">${ongoing?'Deine laufende Einheit':'Als Nächstes'}</div><h2>${esc(next.label)}</h2><p>${ongoing?`${counts().done} von ${counts().total} Sätzen erledigt · Dein Stand ist gespeichert.`:`${next.exercises.length} Übungen · ${sets} Sätze · In deinem Tempo`}</p><button class="btn" data-begin="${next.id}"><span>${ongoing?'Training fortsetzen':'Training starten'}</span><span aria-hidden="true">→</span></button></section><section><div class="section-top"><h2 class="training-section-title">Deine Workouts</h2><button class="textbtn" data-trainview="plan">Bearbeiten ↗</button></div><div class="routine-grid">${cards}</div><p class="training-caption">Wähle die Einheit, die heute zu dir passt.</p></section></div>`;
 }
 function trainingSheet(title,content,wireContent){
+ stopFoodSpeech();
  const dialog=document.getElementById('trainingSheet');
  dialog.innerHTML=`<div class="sheet-handle" aria-hidden="true"></div><div class="sheet-heading"><h2 id="sheetTitle">${esc(title)}</h2><button class="quiet-icon" data-sheetclose aria-label="Schließen">×</button></div>${content}`;
  dialog.querySelector('[data-sheetclose]').onclick=()=>dialog.close();
@@ -1420,6 +1424,7 @@ function viewEssen(){
  const micros=NUT.filter(n=>n.kind==="micro").map(n=>bar(n.l,con[n.k]||0,tg[n.k],n.u)).join("");
  return `<div class="stack">
   ${foodOverview(tg,con)}
+  <button class="btn btn-ghost" data-foodspeak>Essen per Sprache eintragen</button>
   <section class="food-section" aria-label="Deine Mahlzeiten"><div class="food-section-heading"><h2>Deine Mahlzeiten</h2><button class="textbtn" data-foodanalysis>Auswertung ↗</button></div><div class="card food-meals">${mealCards}</div></section>
   <section class="card food-water"><div class="food-section-heading"><h2>Wasser</h2><span class="muted sm">Heute</span></div><div class="food-water-top"><strong>${progressNumber(con.water/1000,2)} <small>/ ${progressNumber(tg.water/1000,1)} l</small></strong>${foodLayoutIcon('water')}</div><div class="nut-bar" role="progressbar" aria-label="Wasser" aria-valuemin="0" aria-valuemax="${Math.max(1,tg.water)}" aria-valuenow="${Math.min(con.water,Math.max(1,tg.water))}" aria-valuetext="${con.water} von ${tg.water} Milliliter"><div class="nut-fill" style="width:${tg.water>0?Math.min(100,con.water/tg.water*100):0}%"></div></div><div class="water-btns" style="margin-top:16px"><button data-water="250">+250 ml</button><button data-water="500">+500 ml</button><button data-water="-250">−250 ml</button></div></section>
   <details class="disclosure" data-disclosure="nutrition-trends"><summary>Trends & Auswertung</summary><div class="disclosure-content">${weekCard(tg)}${trendCard(tg)}</div></details>
@@ -1558,6 +1563,7 @@ function viewFoodPicker(){
    <div class="between" style="margin-bottom:12px"><div class="eyebrow" style="margin:0">Zu ${esc(mealLabel(state.mealFor))}</div><button class="btn btn-ghost btn-sm" style="width:auto;padding:7px 12px" data-foodback="1">Fertig</button></div>
    <div class="shiftrow" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px">${MEALS.map(([k,l])=>`<button class="chip${state.mealFor===k?' chip--on':''}" data-mealsel="${k}" style="padding:9px 2px;font-size:12px">${l}</button>`).join("")}</div>
    <button class="btn" data-scanopen="1" style="margin-bottom:12px">📷 Barcode scannen</button>
+   <button class="btn btn-ghost" data-foodspeak style="margin-bottom:12px">Essen per Sprache eintragen</button>
    ${banner}
    <input class="searchbar" id="foodSearch" aria-label="Lebensmittel suchen" maxlength="100" value="${esc(foodOnline.query)}" placeholder="Lebensmittel oder Marke suchen …" enterkeyhint="search">
    <button class="btn btn-ghost" id="foodOnlineSearch" style="margin-bottom:8px">Online suchen</button>
@@ -1607,8 +1613,9 @@ function openFoodInfo(idx,options={}){
  const rows=NUT.filter(x=>x.k!=="water").map(x=>{const v=f.n[x.k]||0;const val=x.k==="kcal"?Math.round(v):Math.round(v*10)/10;return `<div class="nutrow"><span>${x.l}</span><span class="nv">${f.missing?.includes(x.k)?'Keine Angabe':val+' '+x.u}</span></div>`;}).join("");
  const h=foodHealth(f);
  const health=h.length?`<ul class="health-list">${h.map(([t,d])=>`<li><b>${esc(t)}:</b> ${esc(d)}</li>`).join("")}</ul>`:`<p class="muted sm" style="margin:8px 0 0">Sticht bei keinem Nährstoff besonders hervor — in Maßen Teil einer ausgewogenen Ernährung.</p>`;
- const portions=foodPortions(f)||(f.source==='openfoodfacts'?[]:[['Portion',100]]),last=lastFoodAmount(f.name,u),input=main.querySelector(`[data-gram="${idx}"]`),initial=Number.isFinite(options.grams)?options.grams:input&&Number.isFinite(input.valueAsNumber)?input.valueAsNumber:suggestedFoodAmount(f),preset=Number.isFinite(options.grams)?portions.findIndex(([,g])=>g===options.grams):-1;
- trainingSheet(f.name,`<form class="food-detail" id="foodLogForm"><p class="setting-help">${last?`Zuletzt ${last.toLocaleString('de-DE')} ${u} verwendet. Deine letzte Menge ist vorausgefüllt.`:'Wähle deine Menge und füge das Lebensmittel direkt zu deiner Mahlzeit hinzu.'}</p><div class="food-amount-grid"><label>Menge<input class="inp" id="foodDetailAmount" type="number" min="0.001" max="100000" step="any" inputmode="decimal" enterkeyhint="done" required value="${preset>=0?1:initial}"></label><label>Einheit<select class="sel" id="foodDetailUnit"><option value="g">${u==='ml'?'Milliliter':'Gramm'}</option>${portions.map(([label,g],i)=>`<option value="${i}" ${preset===i?'selected':''}>${esc(label)} (${g} ${u})</option>`).join('')}</select></label></div><div class="food-portion-choices">${portions.map(([label,g],i)=>`<button type="button" data-foodportion="${i}" aria-pressed="${preset===i}">${esc(label)} · ${g} ${u}</button>`).join('')}${last?`<button type="button" data-foodlast>Zuletzt ${last.toLocaleString('de-DE')} ${u}</button>`:''}</div><p class="food-live-amount" id="foodLiveAmount" aria-live="polite"></p><div class="food-macros">${[['kcal','kcal'],['p','g Protein'],['c','g Kohlenh.'],['f','g Fett']].map(([key,label])=>`<div><b data-foodstat="${key}">—</b><small>${label}</small></div>`).join('')}</div><p class="setting-help">Nährwerte und Portionsgrößen sind Richtwerte. Du kannst auch halbe oder mehrere Portionen eintragen.</p><details class="disclosure"><summary>Nährwerte pro 100 ${u}</summary><div class="disclosure-content nuttable">${rows}</div></details><details class="disclosure" style="margin-top:10px"><summary>Mehr über dieses Lebensmittel</summary><div class="disclosure-content">${health}</div></details><div class="food-log-footer"><label class="lbl-sm" for="foodDetailMeal" style="margin-top:0">Mahlzeit</label><select class="sel" id="foodDetailMeal">${MEALS.map(([key,label])=>`<option value="${key}" ${state.mealFor===key?'selected':''}>${label}</option>`).join('')}</select><p class="food-log-error" id="foodLogError" role="status"></p><button class="btn" type="submit" id="foodDetailAdd">Hinzufügen</button></div></form>`,dialog=>{
+ const portions=foodPortions(f)||(f.source==='openfoodfacts'?[]:[['Portion',100]]),last=lastFoodAmount(f.name,u),input=main.querySelector(`[data-gram="${idx}"]`),initial=Number.isFinite(options.grams)?options.grams:input&&Number.isFinite(input.valueAsNumber)?input.valueAsNumber:suggestedFoodAmount(f),preset=Number.isFinite(options.grams)&&!options.requireAmount?portions.findIndex(([,g])=>g===options.grams):-1;
+ trainingSheet(f.name,`<form class="food-detail" id="foodLogForm"><p class="setting-help">${last?`Zuletzt ${last.toLocaleString('de-DE')} ${u} verwendet. Deine letzte Menge ist vorausgefüllt.`:'Wähle deine Menge und füge das Lebensmittel direkt zu deiner Mahlzeit hinzu.'}</p><div class="food-amount-grid"><label>Menge<input class="inp" id="foodDetailAmount" type="number" min="0.001" max="100000" step="any" inputmode="decimal" enterkeyhint="done" required value="${options.requireAmount?'':preset>=0?1:initial}"></label><label>Einheit<select class="sel" id="foodDetailUnit"><option value="g">${u==='ml'?'Milliliter':'Gramm'}</option>${portions.map(([label,g],i)=>`<option value="${i}" ${preset===i?'selected':''}>${esc(label)} (${g} ${u})</option>`).join('')}</select></label></div><div class="food-portion-choices">${portions.map(([label,g],i)=>`<button type="button" data-foodportion="${i}" aria-pressed="${preset===i}">${esc(label)} · ${g} ${u}</button>`).join('')}${last?`<button type="button" data-foodlast>Zuletzt ${last.toLocaleString('de-DE')} ${u}</button>`:''}</div><p class="food-live-amount" id="foodLiveAmount" aria-live="polite"></p><div class="food-macros">${[['kcal','kcal'],['p','g Protein'],['c','g Kohlenh.'],['f','g Fett']].map(([key,label])=>`<div><b data-foodstat="${key}">—</b><small>${label}</small></div>`).join('')}</div><p class="setting-help">Nährwerte und Portionsgrößen sind Richtwerte. Du kannst auch halbe oder mehrere Portionen eintragen.</p><details class="disclosure"><summary>Nährwerte pro 100 ${u}</summary><div class="disclosure-content nuttable">${rows}</div></details><details class="disclosure" style="margin-top:10px"><summary>Mehr über dieses Lebensmittel</summary><div class="disclosure-content">${health}</div></details><div class="food-log-footer"><label class="lbl-sm" for="foodDetailMeal" style="margin-top:0">Mahlzeit</label><select class="sel" id="foodDetailMeal">${MEALS.map(([key,label])=>`<option value="${key}" ${state.mealFor===key?'selected':''}>${label}</option>`).join('')}</select><p class="food-log-error" id="foodLogError" role="status"></p><button class="btn" type="submit" id="foodDetailAdd">Hinzufügen</button></div></form>`,dialog=>{
+  if(options.speechText||options.note)dialog.querySelector('.food-detail').insertAdjacentHTML('afterbegin',`<p class="setting-help" data-foodspeech-note>${options.speechText?`Erkannt: „${esc(options.speechText)}“. `:''}${esc(options.note||'Bitte prüfe Menge und Mahlzeit.')}</p>`);
   if(f.source==='openfoodfacts')dialog.querySelector('.food-detail').insertAdjacentHTML('afterbegin',offSource()+`<p class="setting-help">${f.packageAmount?`Packungsinhalt: ${f.packageAmount.toLocaleString('de-DE')} ${u}.`:f.sizeUnknown?'Keine Packungs- oder Portionsgröße hinterlegt. Bitte prüfe die Menge auf der Verpackung.':'Portionsgröße laut Produktdaten.'}</p>`);
   const amount=dialog.querySelector('#foodDetailAmount'),unit=dialog.querySelector('#foodDetailUnit'),meal=dialog.querySelector('#foodDetailMeal'),add=dialog.querySelector('#foodDetailAdd'),error=dialog.querySelector('#foodLogError');let currentUnit=unit.value;
   const grams=()=>amount.valueAsNumber*(unit.value==='g'?1:portions[+unit.value][1]);
@@ -1621,6 +1628,76 @@ function openFoodInfo(idx,options={}){
   update();
  });
 }
+
+/* Speech only prepares a single food entry. The existing amount sheet confirms it. */
+let foodSpeech=null;
+function stopFoodSpeech(){const r=foodSpeech;foodSpeech=null;if(r){r.onresult=r.onerror=r.onend=null;try{r.abort();}catch{}const mic=document.getElementById('foodSpeechMic');if(mic){mic.textContent='Sprechen';mic.setAttribute('aria-pressed','false');}const status=document.getElementById('foodSpeechStatus');if(status?.textContent==='Ich höre zu …')status.textContent='Zuhören beendet. Du kannst erneut sprechen oder den Satz tippen.';}}
+const foodWords=s=>String(s).toLocaleLowerCase('de').replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+function foodSpokenNumber(s){
+ if(/^\d+(?:[.,]\d+)?$/.test(s))return Number(s.replace(',','.'));
+ const numbers={ein:1,eine:1,einen:1,einem:1,einer:1,eins:1,zwei:2,drei:3,vier:4,fuenf:5,sechs:6,sieben:7,acht:8,neun:9,zehn:10,elf:11,zwoelf:12,dreizehn:13,vierzehn:14,fuenfzehn:15,sechzehn:16,siebzehn:17,achtzehn:18,neunzehn:19,zwanzig:20,dreissig:30,vierzig:40,fuenfzig:50,sechzig:60,siebzig:70,achtzig:80,neunzig:90,hundert:100,einhundert:100,zweihundert:200,dreihundert:300,fuenfhundert:500,tausend:1000,halb:.5,halbe:.5,halben:.5,halbes:.5,anderthalb:1.5};
+ if(Object.hasOwn(numbers,s))return numbers[s];const m=s.match(/^(ein|zwei|drei|vier|fuenf|sechs|sieben|acht|neun)und(zwanzig|dreissig|vierzig|fuenfzig|sechzig|siebzig|achtzig|neunzig)$/);return m?numbers[m[1]]+numbers[m[2]]:null;
+}
+function parseFoodSpeech(text){
+ let s=foodWords(text).trim().replace(/[.!?]+$/,'').replace(/^bitte\s+/,'').replace(/^(?:fuege|fug|trage|trag|buche)\s+/,'').replace(/\s+(?:hinzu|ein)$/,'').replace(/\s+bitte$/,'');
+ if(!s||s.length>200||/\s(?:und|sowie)\s/.test(s)||/^-/.test(s))return {error:'Bitte nenne ein Lebensmittel auf einmal, zum Beispiel „eine Zwiebel“.'};
+ let meal=null;const meals={fruehstueck:'fruehstueck',mittagessen:'mittag',abendessen:'abend',snack:'snack',snacks:'snack'};
+ s=s.replace(/\s+(?:zum|zu|fuer(?:s| das)?)\s+(fruehstueck|mittagessen|abendessen|snacks?)$/,(_,m)=>{meal=meals[m];return '';});
+ const tokens=s.split(/\s+/);let count=foodSpokenNumber(tokens[0]),specified=count!==null;if(specified)tokens.shift();
+ if(specified&&tokens.length&&/^halb(?:e|en|es)?$/.test(tokens[0])){count*=.5;tokens.shift();}
+ let unit=null;const units={g:'g',gramm:'g',kg:'kg',kilogramm:'kg',ml:'ml',milliliter:'ml',l:'l',liter:'l',portion:'portion',portionen:'portion',stueck:'stueck',stuecke:'stueck',glas:'glas',glaeser:'glas',becher:'becher',packung:'packung',packungen:'packung',scheibe:'scheibe',scheiben:'scheibe'};
+ if(Object.hasOwn(units,tokens[0]))unit=units[tokens.shift()];
+ const query=tokens.join(' ').replace(/^(?:von|vom)\s+/,'');
+ if(!query||/\d/.test(query)||(!specified&&unit)||specified&&(!Number.isFinite(count)||count<=0||count>100000))return {error:'Die Menge ist nicht eindeutig. Sag zum Beispiel „200 Gramm Reis“ oder „zwei Eier“.'};
+ return {query,count:specified?count:null,unit,meal};
+}
+function speechFoodMatches(query){
+ const aliases={zwiebeln:'zwiebel',eier:'ei',aepfel:'apfel',bananen:'banane',tomaten:'tomate',kartoffeln:'kartoffel',moehren:'karotte',karotten:'karotte'};
+ const norm=s=>foodWords(s).replace(/[^a-z0-9 ]/g,' ').trim().split(/\s+/).map(t=>aliases[t]||t).join(' '),q=norm(query);
+ const foods=allFoods().map((f,idx)=>({f,idx,name:norm(f.name)})),exact=foods.filter(x=>x.name===q);
+ return exact.length?exact:foods.filter(x=>q.split(' ').every(t=>x.name.split(' ').includes(t)));
+}
+function speechFoodAmount(f,parsed){
+ const u=foodUnit(f),count=parsed.count,unit=parsed.unit;
+ if(count===null)return {note:'Keine Menge genannt. Bitte prüfe die vorausgefüllte Menge.'};
+ if(['g','kg','ml','l'].includes(unit)){
+  const expected=['ml','l'].includes(unit)?'ml':'g';if(expected!==u)return {requireAmount:true,note:`Du hast ${expected} genannt, dieses Lebensmittel hat Nährwerte pro 100 ${u}. Bitte gib die passende Menge in ${u} ein.`};
+  const grams=count*(['kg','l'].includes(unit)?1000:1);return grams<=100000?{grams}:{requireAmount:true,note:'Die genannte Menge ist zu groß. Bitte prüfe sie.'};
+ }
+ const portions=foodPortions(f)||[],p=portions.find(([label])=>unit?foodWords(label).includes(unit):/^1\s/.test(label))||(!unit?portions[0]:null);
+ if(!p)return {requireAmount:true,note:`Für „${count} ${unit||'Stück'}“ ist kein Gewicht hinterlegt. Bitte gib die Menge in ${u} ein.`};
+ const leading=foodWords(p[0]).match(/^(\d+(?:[.,]\d+)?)\s/),per=leading?Number(leading[1].replace(',','.')):1,grams=count*p[1]/per;
+ return {grams,note:`${count.toLocaleString('de-DE')} × ${p[0]}: ${grams.toLocaleString('de-DE')} ${u}. Stück- und Portionsgewichte sind Richtwerte – bitte prüfen.`};
+}
+function openFoodSpeech(){
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ trainingSheet('Essen sprechen',`<p class="setting-help">Sag zum Beispiel „Füge eine Zwiebel hinzu“, „200 Gramm Reis“ oder „zwei Eier“. Ein Lebensmittel pro Satz. Du prüfst die Menge vor dem Eintragen.</p><label class="lbl-sm" for="foodSpeechText">Dein Satz</label><input class="searchbar" id="foodSpeechText" maxlength="200" placeholder="Füge eine Zwiebel hinzu"><button class="btn btn-ghost" id="foodSpeechMic" style="margin-bottom:12px">${SR?'Sprechen':'Spracheingabe nicht verfügbar'}</button><p class="setting-help">Beim Sprechen kann dein Browser Audio an seinen Spracherkennungsdienst senden. Hermes speichert keine Aufnahme. Alternativ kannst du den Satz tippen oder das Mikrofon deiner Handytastatur nutzen.</p><p class="setting-help" id="foodSpeechStatus" role="status" aria-live="polite"></p><button class="btn" id="foodSpeechCheck">Menge prüfen</button><div id="foodSpeechMatches" style="margin-top:12px"></div>`,dialog=>{
+  const input=dialog.querySelector('#foodSpeechText'),mic=dialog.querySelector('#foodSpeechMic'),status=dialog.querySelector('#foodSpeechStatus'),matches=dialog.querySelector('#foodSpeechMatches');mic.disabled=!SR;
+  const stop=()=>{stopFoodSpeech();mic.textContent=SR?'Sprechen':'Spracheingabe nicht verfügbar';mic.setAttribute('aria-pressed','false');};
+  dialog.addEventListener('close',stop,{once:true});
+  const check=()=>{
+   stop();matches.replaceChildren();const parsed=parseFoodSpeech(input.value);if(parsed.error){status.textContent=parsed.error;return;}
+   const found=speechFoodMatches(parsed.query);
+   const choose=x=>{if(parsed.meal)state.mealFor=parsed.meal;openFoodInfo(x.idx,{...speechFoodAmount(x.f,parsed),speechText:input.value});};
+   if(found.length===1){choose(found[0]);return;}
+   status.textContent=found.length?'Welches Lebensmittel meinst du?':'Kein gespeichertes Lebensmittel gefunden. Du kannst danach in der Lebensmittelsuche online suchen.';
+   for(const x of found){const b=document.createElement('button');b.className='sheet-action';b.textContent=x.f.name;b.onclick=()=>choose(x);matches.appendChild(b);}
+   if(!found.length){const b=document.createElement('button');b.className='btn btn-ghost';b.textContent='Lebensmittelsuche öffnen';b.onclick=()=>{dialog.close();state.tab='essen';state.foodPicker=true;render();const search=main.querySelector('#foodSearch');search.value=parsed.query;search.oninput();search.focus();};matches.appendChild(b);}
+  };
+  dialog.querySelector('#foodSpeechCheck').onclick=check;input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();check();}};input.oninput=()=>{stop();matches.replaceChildren();status.textContent='';};
+  mic.onclick=()=>{
+   if(foodSpeech){stop();status.textContent='Aufnahme abgebrochen. Du kannst deinen Satz tippen.';return;}
+   const r=new SR();foodSpeech=r;r.lang='de-DE';r.interimResults=false;r.continuous=false;r.maxAlternatives=1;
+   mic.textContent='Zuhören beenden';mic.setAttribute('aria-pressed','true');status.textContent='Ich höre zu …';matches.replaceChildren();
+   r.onresult=e=>{if(foodSpeech!==r||!dialog.open||!input.isConnected)return;input.value=String(e.results[0][0].transcript).slice(0,200);check();};
+   r.onerror=e=>{if(foodSpeech!==r)return;stop();status.textContent=['not-allowed','service-not-allowed'].includes(e.error)?'Mikrofonzugriff nicht erlaubt. Erlaube ihn in deinem Browser oder tippe deinen Satz.':e.error==='network'?'Spracherkennung gerade nicht erreichbar. Du kannst deinen Satz tippen.':'Keine Sprache erkannt. Versuch es erneut oder tippe deinen Satz.';};
+   r.onend=()=>{if(foodSpeech!==r)return;stop();status.textContent='Keine Sprache erkannt. Versuch es erneut oder tippe deinen Satz.';};
+   try{r.start();}catch{stop();status.textContent='Spracheingabe konnte nicht gestartet werden. Du kannst deinen Satz tippen.';}
+  };
+ });
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stopFoodSpeech();});
+window.addEventListener('pagehide',stopFoodSpeech);
 
 /* ---- Barcode-Scanner (Open Food Facts) ----
    Android: eingebaute BarcodeDetector-API. iPhone & Co.: ZXing-Bibliothek (bei Bedarf
