@@ -4,7 +4,7 @@
      ohne Netz die zuletzt gespeicherte. So kommen Updates automatisch beim Öffnen an.
    - Übrige Dateien (manifest, icon, Fonts) = "Cache zuerst", im Hintergrund nachgeladen.
    CACHE-Version bei größeren Änderungen erhöhen (v2 -> v3 …), damit alte Caches weichen. */
-const CACHE = "hermes-v21";
+const CACHE = "hermes-v22";
 const ASSETS = ["./", "./index.html", "./manifest.json", "./icon.svg"];
 
 self.addEventListener("install", e => {
@@ -49,4 +49,15 @@ self.addEventListener("fetch", e => {
       return res;
     }).catch(() => Response.error()))
   );
+});
+
+self.addEventListener("notificationclick", event => {
+  if(event.notification.tag!=="hermes-rest")return;
+  event.notification.close();
+  event.waitUntil((async () => {
+    const windows=await self.clients.matchAll({type:"window",includeUncontrolled:true});
+    const app=windows.find(client=>client.url.startsWith(self.registration.scope));
+    if(app)await app.focus();
+    else await self.clients.openWindow(self.registration.scope);
+  })());
 });

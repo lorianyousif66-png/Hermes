@@ -423,7 +423,7 @@ body.has-background .app{background:var(--bg);background:color-mix(in srgb,var(-
 </div></div>
 <script>
 "use strict";
-const APP_VERSION='4.8.6';
+const APP_VERSION='4.8.7';
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 /* Kurze Vibration als Bestätigung (Android; anderswo stiller No-Op). */
 function buzz(p='tap'){if(state.settings.haptics===false)return;const patterns={tap:7,select:10,complete:[12,35,18],delete:14,undo:[7,25,7],success:[15,45,25],ready:6};try{if(navigator.vibrate)navigator.vibrate(typeof p==='string'?(patterns[p]||7):p);}catch(e){}}
@@ -1214,7 +1214,9 @@ function showDefaultRest(){
    ${REST_PRESETS.map(seconds=>`<button class="chip${state.settings.rest===seconds?' chip--on':''}" type="button" data-rest-preset="${seconds}" aria-pressed="${state.settings.rest===seconds}">${fmtElapsed(seconds)}</button>`).join('')}
   </div>
   <p class="food-log-error" role="status" id="defaultRestError"></p>
+  <div data-rest-alert-controls></div>
  `,dialog=>{
+  wireRestAlerts(dialog.querySelector('[data-rest-alert-controls]'));
   dialog.querySelectorAll('[data-rest-preset]').forEach(button=>button.onclick=()=>{
    const rest=Number(button.dataset.restPreset);
    if(!REST_PRESETS.includes(rest))return;
@@ -1445,8 +1447,78 @@ function switchDay(id){
 }
 
 /* Rest timer */
-function startRest(){stopRest();const r=state.rest;r.base=Math.max(0,Math.round(state.settings.rest||0));r.left=r.base;if(!r.left)return;r.until=Date.now()+r.left*1000;r.active=true;r.paused=false;drawRest();r.timer=setInterval(tickRest,500);}
-function tickRest(){const r=state.rest;if(!r.active||r.paused)return;r.left=Math.max(0,Math.ceil((r.until-Date.now())/1000));if(r.left<=0){stopRest();notifyUser('Pause vorbei. Bereit für den nächsten Satz.');buzz([20,60,20]);}else drawRest();}
+let restAudio=null;
+function prepareRestBell(){
+ const Audio=window.AudioContext||window.webkitAudioContext;
+ if(!Audio)return;
+ try{
+  if(!restAudio||restAudio.state==='closed')restAudio=new Audio();
+  if(restAudio.state!=='running')restAudio.resume().catch(()=>{});
+ }catch{}
+}
+function ringRestBell(){
+ if(restAudio?.state!=='running')return;
+ try{
+  const onset=restAudio.currentTime+.01;
+  for(const [frequency,volume,offset,duration] of [[880,.15,0,.42],[1320,.05,0,.25],[1174.66,.12,.16,.52],[1760,.035,.16,.28]]){
+   const oscillator=restAudio.createOscillator(),gain=restAudio.createGain();
+   const start=onset+offset;
+   oscillator.frequency.value=frequency;
+   gain.gain.setValueAtTime(.0001,start);
+   gain.gain.exponentialRampToValueAtTime(volume,start+.012);
+   gain.gain.exponentialRampToValueAtTime(.0001,start+duration);
+   oscillator.connect(gain);gain.connect(restAudio.destination);
+   oscillator.onended=()=>{oscillator.disconnect();gain.disconnect();};
+   oscillator.start(start);oscillator.stop(start+duration);
+  }
+ }catch{}
+}
+function wireRestAlerts(host){
+ if(!('Notification' in window))return;
+ const status=document.createElement('p');
+ status.className='setting-help';status.setAttribute('role','status');
+ const button=document.createElement('button');
+ button.type='button';button.className='btn btn-ghost btn-sm';button.textContent='Gerätemitteilungen erlauben';
+ host.append(button,status);
+ const update=()=>{
+  button.hidden=Notification.permission!=='default';
+  status.textContent=Notification.permission==='granted'?'Gerätemitteilungen für Pausen sind erlaubt.':Notification.permission==='denied'?'Gerätemitteilungen sind blockiert. Ändere die Berechtigung in deinen Geräteeinstellungen.':'';
+ };
+ update();
+ button.onclick=async()=>{
+  button.disabled=true;
+  try{await Notification.requestPermission();update();}
+  catch{status.textContent='Gerätemitteilungen sind hier nicht verfügbar.';}
+  finally{button.disabled=false;}
+ };
+}
+async function showRestComplete(){
+ const message='Bereit für den nächsten Satz.';
+ notifyUser('Pause vorbei. '+message);buzz([20,60,20]);
+ if(document.hidden&&window.Notification?.permission==='granted'){
+  const options={body:message,tag:'hermes-rest',icon:new URL('icon.svg',location.href).href};
+  try{
+   const registration=await navigator.serviceWorker?.getRegistration();
+   if(document.hidden){
+    if(registration)await registration.showNotification('Pause vorbei',options);
+    else new Notification('Pause vorbei',options);
+    return;
+   }
+  }catch{}
+ }
+ ringRestBell();
+}
+function startRest(){
+ stopRest();const r=state.rest;r.base=Math.max(0,Math.round(state.settings.rest||0));r.left=r.base;if(!r.left)return;
+ prepareRestBell();
+ r.until=Date.now()+r.left*1000;r.active=true;r.paused=false;drawRest();r.timer=setInterval(tickRest,500);
+}
+function tickRest(){
+ const r=state.rest;if(!r.active||r.paused)return;
+ r.left=Math.max(0,Math.ceil((r.until-Date.now())/1000));
+ if(r.left<=0){stopRest();showRestComplete();}
+ else drawRest();
+}
 function stopRest(){const r=state.rest;if(r.timer)clearInterval(r.timer);r.timer=null;r.active=false;r.paused=false;r.left=0;drawRest();}
 function adjustRest(seconds){const r=state.rest;if(!r.active)return;r.left=Math.max(0,(r.paused?r.left:Math.ceil((r.until-Date.now())/1000))+seconds);if(!r.left){stopRest();return;}if(!r.paused)r.until=Date.now()+r.left*1000;drawRest();}
 function toggleRestPause(){const r=state.rest;if(!r.active)return;if(r.paused){r.paused=false;r.until=Date.now()+r.left*1000;}else{r.left=Math.max(1,Math.ceil((r.until-Date.now())/1000));r.paused=true;}drawRest();}
@@ -9450,6 +9522,8 @@ exmodalEl.onclick=e=>{if(e.target===exmodalEl)closeExInfo();};
 
 if(!load(K.plan,null))sP();restoreWorkout();applyTheme();initScanner();render();
 document.addEventListener('visibilitychange',()=>{if(document.hidden){flushSetRemovals();persistWorkout();}else if(activeDate!==todayKey()){activeDate=todayKey();taskEditor=null;dayUndo=null;state.dayPlanMsg='';render();}});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)tickRest();});
+window.addEventListener('pageshow',tickRest);
 window.addEventListener('pagehide',()=>{flushSetRemovals();persistWorkout();});
 setInterval(()=>{if(!document.hidden&&activeDate!==todayKey()){activeDate=todayKey();taskEditor=null;dayUndo=null;state.dayPlanMsg='';render();}},30000);
 setInterval(()=>{const el=document.getElementById('workoutElapsed');if(el&&state.startedAt&&!document.hidden)el.textContent=fmtElapsed(Math.floor((Date.now()-state.startedAt)/1000));},1000);
