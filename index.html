@@ -420,7 +420,7 @@ body.has-background .app{background:var(--bg);background:color-mix(in srgb,var(-
 </div></div>
 <script>
 "use strict";
-const APP_VERSION='4.8.3';
+const APP_VERSION='4.8.4';
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 /* Kurze Vibration als Bestätigung (Android; anderswo stiller No-Op). */
 function buzz(p='tap'){if(state.settings.haptics===false)return;const patterns={tap:7,select:10,complete:[12,35,18],delete:14,undo:[7,25,7],success:[15,45,25],ready:6};try{if(navigator.vibrate)navigator.vibrate(typeof p==='string'?(patterns[p]||7):p);}catch(e){}}
@@ -1203,21 +1203,31 @@ function showWorkoutPreview(id){
   dialog.querySelector('[data-preview-start]').onclick=()=>{if(startWorkout(id))dialog.close();};
  });
 }
-function showDefaultRest(){
- trainingSheet('Standardpause',`<form class="sheet-form">
+function showExerciseRest(index){
+ trainingSheet('Pause',`<form class="sheet-form">
   <label>Sekunden<input class="inp" id="defaultRestSeconds" type="number" min="0" max="600" step="1" inputmode="numeric" required value="${state.settings.rest}"></label>
-  <p class="setting-help">Gilt ab der nächsten Pause. Bei 0 Sekunden startet kein Timer automatisch.</p>
+  <p class="setting-help">Speichere die Zeit als Standard für alle Übungen oder starte sie einmalig. Bei 0 Sekunden ist die automatische Pause aus.</p>
   <p class="food-log-error" role="status" id="defaultRestError"></p>
   <button class="btn" type="submit">Standardpause speichern</button>
+  <button class="btn btn-ghost" type="button" data-run-rest>Pause jetzt starten</button>
  </form>`,dialog=>{
+  const seconds=dialog.querySelector('#defaultRestSeconds');
+  const run=dialog.querySelector('[data-run-rest]');
+  const update=()=>{run.disabled=!seconds.validity.valid||!(seconds.valueAsNumber>0);};
+  seconds.oninput=update;
+  update();
+  run.onclick=()=>{
+   if(run.disabled)return;
+   dialog.close();ensureWorkoutStarted();startRest(seconds.valueAsNumber);
+  };
   dialog.querySelector('form').onsubmit=event=>{
    event.preventDefault();
-   const rest=dialog.querySelector('#defaultRestSeconds').valueAsNumber;
+   const rest=seconds.valueAsNumber;
    if(!Number.isInteger(rest)||rest<0||rest>600)return;
    const settings={...state.settings,rest};
    if(!save(K.settings,settings)){dialog.querySelector('#defaultRestError').textContent='Die Pause konnte nicht gespeichert werden.';return;}
    state.settings=settings;dialog.close();render();
-   main.querySelector('[data-default-rest]')?.focus({preventScroll:true});
+   main.querySelector(`[data-exercise-rest="${index}"]`)?.focus({preventScroll:true});
   };
  });
 }
@@ -1256,7 +1266,7 @@ function viewTraining(){
  const exHtml=state.log.map((ex,ei)=>{
   const u=UNITS[ex.unit]||UNITS.kg,noW=ex.unit!=="kg";
   const rows=ex.sets.map((s,si)=>{const prev=previousSet(ex.name,si,ex.unit),prior=previousSetText(prev,ex.unit),short=prev?(ex.unit==='kg'?`${prev.weight||'—'}×${prev.reps||'—'}`:`${prev.reps||'—'}`)+(prev.type&&prev.type!=='normal'?` ${SET_TYPES.find(t=>t[0]===prev.type)?.[1]||''}`:''):'—',type=SET_TYPES.find(t=>t[0]===s.type)||SET_TYPES[0];return `<div class="set-swipe" data-set-swipe="${ei}-${si}"><button class="set-remove" data-removeset="${ei}-${si}" tabindex="-1" aria-hidden="true" aria-label="${esc(ex.name)}, Satz ${si+1} löschen" ${ex.sets.length<=1?'disabled':''}>Löschen</button><div class="setrow${s.done?' setrow--done':''}" data-row="${ei}-${si}"><span class="set-label"><button class="setnum setnum-button" data-setmenu="${ei}-${si}" aria-label="${esc(ex.name)}, Satz ${si+1}: Löschoption anzeigen" aria-expanded="false" ${ex.sets.length<=1?'disabled':''}>${si+1}</button><button class="set-type${type[0]==='normal'?' set-type--normal':''}" data-settype="${ei}-${si}" aria-label="Satztyp ${type[2]}, antippen zum Wechseln" title="${type[2]}">${type[1]}</button></span><span class="set-prev${prev?'':' set-prev--empty'}" title="${esc(prior)}" aria-label="Vorher: ${esc(prior)}">${esc(short)}</span><input class="inp" type="number" inputmode="decimal" placeholder="${noW?'—':'0'}" value="${esc(s.weight)}" ${noW?'disabled':''} data-f="weight" data-ei="${ei}" data-si="${si}"><input class="inp" type="number" inputmode="numeric" placeholder="0" value="${esc(s.reps)}" data-f="reps" data-ei="${ei}" data-si="${si}"><button class="check${s.done?' check--on':''}" data-check="${ei}-${si}">✓</button></div></div>`;}).join("");
-  return `<section class="card exercise-card" id="exercise-${ei}"><div class="ex-head"><div class="exercise-heading"><div class="exercise-index">ÜBUNG ${String(ei+1).padStart(2,'0')}</div><button class="ex-name" data-exinfo="${esc(ex.name)}">${esc(ex.name)}</button><div class="ex-target">${ex.sets.length} Sätze · ${esc(ex.reps)} ${u.r} <span data-exprogress="${ei}">· ${ex.sets.filter(s=>s.done).length} erledigt</span></div></div><button class="quiet-icon" data-exactions="${ei}" aria-label="Optionen für ${esc(ex.name)}">···</button></div><details class="exercise-note"><summary data-notesummary="${ei}">${ex.note?'↳ '+esc(ex.note):'+ Notiz hinzufügen'}</summary><input class="ex-note" data-exnote="${ei}" aria-label="Einstellung oder Notiz für ${esc(ex.name)}" placeholder="Zum Beispiel: Sitz 5" maxlength="100" value="${esc(ex.note||'')}"></details><div class="sethead"><span>Satz</span><span>Vorher</span><span>${u.w}</span><span>${u.r}</span><span aria-label="Erledigt">✓</span></div>${rows}<div class="exercise-actions"><button class="setbtn" data-addset="${ei}">+ Satz hinzufügen</button><button class="restbtn" data-startrest="1" aria-label="${state.settings.rest} Sekunden Pause starten">◷ ${fmtElapsed(state.settings.rest)} Pause</button></div></section>`;
+  return `<section class="card exercise-card" id="exercise-${ei}"><div class="ex-head"><div class="exercise-heading"><div class="exercise-index">ÜBUNG ${String(ei+1).padStart(2,'0')}</div><button class="ex-name" data-exinfo="${esc(ex.name)}">${esc(ex.name)}</button><div class="ex-target">${ex.sets.length} Sätze · ${esc(ex.reps)} ${u.r} <span data-exprogress="${ei}">· ${ex.sets.filter(s=>s.done).length} erledigt</span></div></div><button class="quiet-icon" data-exactions="${ei}" aria-label="Optionen für ${esc(ex.name)}">···</button></div><details class="exercise-note"><summary data-notesummary="${ei}">${ex.note?'↳ '+esc(ex.note):'+ Notiz hinzufügen'}</summary><input class="ex-note" data-exnote="${ei}" aria-label="Einstellung oder Notiz für ${esc(ex.name)}" placeholder="Zum Beispiel: Sitz 5" maxlength="100" value="${esc(ex.note||'')}"></details><div class="sethead"><span>Satz</span><span>Vorher</span><span>${u.w}</span><span>${u.r}</span><span aria-label="Erledigt">✓</span></div>${rows}<div class="exercise-actions"><button class="setbtn" data-addset="${ei}">+ Satz hinzufügen</button><button class="restbtn" data-exercise-rest="${ei}" aria-label="Pause für ${esc(ex.name)} einstellen und starten">◷ ${fmtElapsed(state.settings.rest)} Pause</button></div></section>`;
  }).join("");
  const {done,total}=counts();
  return `<div class="stack">
@@ -1265,7 +1275,6 @@ function viewTraining(){
   ${setUndo&&setUndo.log===state.log?`<div class="set-undo" role="status"><span>Satz ${setUndo.index+1} entfernt · ${esc(setUndo.exercise.name)}</span><button data-undoset>Rückgängig</button></div>`:''}
   <div class="form-actions workout-session-tools">
    <button class="btn btn-ghost btn-sm" data-session-add>+ Übung hinzufügen</button>
-   <button class="btn btn-ghost btn-sm" data-default-rest>Standardpause · ${fmtElapsed(state.settings.rest)}</button>
   </div>
   ${exHtml}
   <section class="session-note"><label for="noteInp" class="training-section-title">Deine Trainingsnotiz</label><textarea class="notearea" id="noteInp" placeholder="Wie hat es sich angefühlt?">${esc(state.note)}</textarea><p class="draft-note">Automatisch auf diesem Gerät gespeichert.</p></section>
@@ -1443,7 +1452,7 @@ function switchDay(id){
 }
 
 /* Rest timer */
-function startRest(){stopRest();const r=state.rest;r.base=Math.max(0,Math.round(state.settings.rest||0));r.left=r.base;if(!r.left)return;r.until=Date.now()+r.left*1000;r.active=true;r.paused=false;drawRest();r.timer=setInterval(tickRest,500);}
+function startRest(seconds=state.settings.rest){stopRest();const r=state.rest;r.base=Math.max(0,Math.round(seconds||0));r.left=r.base;if(!r.left)return;r.until=Date.now()+r.left*1000;r.active=true;r.paused=false;drawRest();r.timer=setInterval(tickRest,500);}
 function tickRest(){const r=state.rest;if(!r.active||r.paused)return;r.left=Math.max(0,Math.ceil((r.until-Date.now())/1000));if(r.left<=0){stopRest();notifyUser('Pause vorbei. Bereit für den nächsten Satz.');buzz([20,60,20]);}else drawRest();}
 function stopRest(){const r=state.rest;if(r.timer)clearInterval(r.timer);r.timer=null;r.active=false;r.paused=false;r.left=0;drawRest();}
 function adjustRest(seconds){const r=state.rest;if(!r.active)return;r.left=Math.max(0,(r.paused?r.left:Math.ceil((r.until-Date.now())/1000))+seconds);if(!r.left){stopRest();return;}if(!r.paused)r.until=Date.now()+r.left*1000;drawRest();}
@@ -9272,7 +9281,6 @@ function wire(){
  main.querySelectorAll('[data-begin]').forEach(button=>button.onclick=()=>startWorkout(button.dataset.begin));
  main.querySelectorAll('[data-workout-preview]').forEach(button=>button.onclick=()=>showWorkoutPreview(button.dataset.workoutPreview));
  const addExercise=main.querySelector('[data-session-add]');if(addExercise)addExercise.onclick=()=>openExercisePicker({appendSession:state.log});
- const defaultRest=main.querySelector('[data-default-rest]');if(defaultRest)defaultRest.onclick=showDefaultRest;
  const back=main.querySelector('[data-workoutback]');if(back)back.onclick=()=>{state.workoutScroll=window.scrollY;state.workoutMinimized=true;render();};
  main.querySelectorAll('[data-exactions]').forEach(b=>b.onclick=()=>showExerciseActions(+b.dataset.exactions));
  const jump=main.querySelector('[data-exjump]');if(jump)jump.onclick=showExerciseJump;
@@ -9291,7 +9299,7 @@ function wire(){
  main.querySelectorAll('[data-exnote]').forEach(inp=>inp.oninput=()=>{ensureWorkoutStarted();state.log[+inp.dataset.exnote].note=inp.value;main.querySelector(`[data-notesummary="${inp.dataset.exnote}"]`).textContent=inp.value?'↳ '+inp.value:'+ Notiz hinzufügen';});
  main.querySelectorAll('[data-settype]').forEach(btn=>btn.onclick=()=>{const [ei,si]=btn.dataset.settype.split('-').map(Number);showSetTypes(ei,si);});
  main.querySelectorAll("[data-check]").forEach(btn=>btn.onclick=()=>{const [ei,si]=btn.dataset.check.split("-").map(Number);ensureWorkoutStarted();const s=state.log[ei].sets[si];s.done=!s.done;if(s.done)buzz(10);btn.classList.toggle("check--on",s.done);btn.setAttribute('aria-pressed',String(s.done));const r=main.querySelector(`[data-row="${ei}-${si}"]`);if(r)r.classList.toggle("setrow--done",s.done);updateProgress();if(s.done&&state.settings.rest>0)startRest();});
- main.querySelectorAll("[data-startrest]").forEach(b=>b.onclick=()=>{ensureWorkoutStarted();startRest();});
+ main.querySelectorAll('[data-exercise-rest]').forEach(button=>button.onclick=()=>showExerciseRest(Number(button.dataset.exerciseRest)));
  main.querySelectorAll('[data-addset]').forEach(button=>button.onclick=()=>{
   ensureWorkoutStarted();
   const exercise=state.log[Number(button.dataset.addset)];
