@@ -46,6 +46,15 @@ Abhängigkeiten. Sie wird auf GitHub Pages gehostet und auf dem Handy per
 
 ### Hermes 4 (Oktober 2026)
 
+- 4.8.1: Der Essens-Picker durchsucht 7.090 integrierte BLS-4.0-Einträge mit
+  vollständigen Grundnährwerten, dazu die bisherigen und eigenen Lebensmittel.
+  Quelle: Max Rubner-Institut (2025), DOI 10.25826/Data20251217-134202-0, CC BY 4.0.
+  Der Auszug enthält nur die von Hermes verwendeten Werte pro 100 g essbaren
+  Anteil; fehlende Mikronährstoffe bleiben null. Die BLS-Daten sind Teil der
+  Offline-App. Der Picker rendert nur sichtbare Treffer und priorisiert genaue
+  Namen. Ohne lokalen Treffer sucht Hermes nach einer Tipp-Pause bei Open Food
+  Facts. Produktnährwerte werden erst beim Antippen des Treffers abgerufen.
+  Bekannte Portionen, Barcode und bestehende Tagebucheinträge bleiben erhalten.
 - Rückkehr zu 4.8 auf Nutzerwunsch: „Hey Hermes“-Modus aus 4.9 vollständig entfernt.
   Normale Spracheingabe und Barcode-Funktionen bleiben. App-Code entspricht wieder
   f7c9a37; Cache bewusst vorwärts auf v20, damit installierte Geräte 4.9 ersetzen.
