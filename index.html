@@ -392,7 +392,7 @@ body.has-background .app{background:var(--bg);background:color-mix(in srgb,var(-
 .meal-picker-kcal{white-space:nowrap;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .meal-picker-footer{position:fixed;z-index:30;bottom:0;left:50%;transform:translateX(-50%);width:min(100%,560px);padding:10px 20px calc(12px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--hair)}
 .meal-picker-footer .btn{min-height:48px}
-@media(max-width:360px){.meal-picker .gramrow{gap:4px}.meal-picker .food-quickamount .gram-inp{width:48px}.meal-picker-footer{padding-inline:12px}}
+@media(max-width:360px){.meal-picker .gramrow{gap:4px}.meal-picker-footer{padding-inline:12px}}
 </style>
 </head>
 <body>
@@ -419,7 +419,7 @@ body.has-background .app{background:var(--bg);background:color-mix(in srgb,var(-
 </div></div>
 <script>
 "use strict";
-const APP_VERSION='4.8.1';
+const APP_VERSION='4.8.2';
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 /* Kurze Vibration als Bestätigung (Android; anderswo stiller No-Op). */
 function buzz(p='tap'){if(state.settings.haptics===false)return;const patterns={tap:7,select:10,complete:[12,35,18],delete:14,undo:[7,25,7],success:[15,45,25],ready:6};try{if(navigator.vibrate)navigator.vibrate(typeof p==='string'?(patterns[p]||7):p);}catch(e){}}
@@ -8693,11 +8693,6 @@ function wireFoodPicker(){
  source.onchange=()=>{resetResults();scheduleOnline(filter());};
  sort.onchange=()=>{limit=12;filter();};
  main.querySelector('[data-picker-search]').onclick=()=>search.focus();
- list.oninput=event=>{
-  if(!event.target.matches('[data-gram]'))return;
-  const row=event.target.closest('[data-foodrow]');
-  row.querySelector('.meal-picker-kcal').textContent=pickerCalories(foods[Number(row.dataset.foodrow)],event.target.valueAsNumber);
- };
  more.textContent='Weitere Lebensmittel anzeigen';
  more.onclick=()=>{limit+=24;filter();};
  list.onclick=event=>{
@@ -8705,8 +8700,9 @@ function wireFoodPicker(){
   if(!row||event.target.closest('input'))return;
   const i=Number(row.dataset.foodrow);
   if(event.target.closest('[data-addfood]')){
-   const portion=foodPortions(foods[i])?.[0],input=row.querySelector('[data-gram]');
-   addFood(i,portion?portion[1]:input?.valueAsNumber,state.mealFor);
+   const portion=foodPortions(foods[i])?.[0];
+   if(portion)addFood(i,portion[1],state.mealFor);
+   else openFoodInfo(i);
   }else openFoodInfo(i);
  };
  list.addEventListener('foodlogged',event=>recordUse(event.detail));
@@ -8794,14 +8790,10 @@ function showOnlineFood(f){
  if(!f)return;trainingSheet(f.name,`<p class="setting-help">Online gefunden · pro 100 ${foodUnit(f)}</p><div class="food-macros">${[['kcal','kcal'],['p','g Protein'],['c','g Kohlenh.'],['f','g Fett']].map(([k,l])=>`<div><b>${Math.round(f.n[k]*10)/10}</b><small>${l}</small></div>`).join('')}</div>${offSource()}<p class="setting-help">Beim Übernehmen wird dieses Produkt auf deinem Gerät gespeichert und ist danach auch offline verfügbar. Es wird noch nichts ins Tagebuch eingetragen.</p><p id="foodOnlineSaveError" role="status" class="food-log-error"></p><button class="btn" id="foodOnlineSave">Übernehmen & Menge wählen</button>`,dialog=>{dialog.querySelector('#foodOnlineSave').onclick=()=>{let idx=state.customFoods.findIndex(x=>(f.code&&x.source==='openfoodfacts'&&x.code===f.code)||x.name===f.name);if(idx<0){const next=[...state.customFoods,f];if(!save(K.custom,next)){dialog.querySelector('#foodOnlineSaveError').textContent='Nicht gespeichert. Bitte schaffe Speicherplatz und versuche es erneut.';return;}state.customFoods=next;idx=next.length-1;}render();openFoodInfo(idx);};});
 }
 function foodPickerRow(f,i){
-  const portion=foodPortions(f)?.[0],unit=foodUnit(f),amount=portion?.[1]??suggestedFoodAmount(f);
+  const portion=foodPortions(f)?.[0],unit=foodUnit(f),amount=portion?.[1]??100;
   const label=portion?`${/^\d/.test(portion[0])?portion[0]:'1 '+portion[0]} · ${progressNumber(amount,3)} ${unit}`:'';
-  const quickAmount=portion?''
-    : `<div class="food-quickamount"><input class="gram-inp" type="number" min="0.1" max="100000" step="any" inputmode="decimal" aria-label="${esc(f.name)} ${unit}" value="${suggestedFoodAmount(f)}" data-gram="${i}"><span>${unit}</span></div>`;
-  return `<div class="pick-item food-item" data-foodrow="${i}"><div class="pick-left"><button class="food-details" data-foodinfo="${i}" aria-label="${esc(f.name)} ansehen und Menge wählen"><span class="pn">${esc(f.name)}</span>${label?`<span class="food-quickportion">${esc(label)}</span>`:''}</button></div><div class="gramrow">${quickAmount}<span class="meal-picker-kcal">${pickerCalories(f,amount)}</span><button class="pick-add" aria-label="${esc(f.name)} hinzufügen" data-addfood="${i}">+</button></div></div>`;
-}
-function pickerCalories(food,amount){
- return Number.isFinite(amount)&&amount>=.1&&amount<=100000?`${progressNumber(food.n.kcal*amount/100)} kcal`:'—';
+  const calories=`${progressNumber(f.n.kcal*amount/100)} kcal${portion?'':' / 100 '+unit}`;
+  return `<div class="pick-item food-item" data-foodrow="${i}"><div class="pick-left"><button class="food-details" data-foodinfo="${i}" aria-label="${esc(f.name)} ansehen und Menge wählen"><span class="pn">${esc(f.name)}</span>${label?`<span class="food-quickportion">${esc(label)}</span>`:''}</button></div><div class="gramrow"><span class="meal-picker-kcal">${calories}</span><button class="pick-add" aria-label="${esc(f.name)} ${portion?'hinzufügen':'Menge wählen'}" data-addfood="${i}">+</button></div></div>`;
 }
 function pickerMealCalories(){
  const entries=state.foodLog[todayKey()]||[];
@@ -8861,11 +8853,6 @@ function addFood(idx,grams,meal){
  const n={};FKEYS.forEach(k=>n[k]=(f.n[k]||0)*g/100);
  const day=todayKey();const arr=state.foodLog[day]?[...state.foodLog[day]]:[];
  const selectedMeal=MEALS.some(([key])=>key===meal)?meal:state.mealFor;arr.push({name:f.name,grams:g,...(u==='ml'?{unit:'ml'}:{}),meal:selectedMeal,n,knownNutrients:FKEYS.filter(k=>knownFoodNutrient(f,k))});const next={...state.foodLog,[day]:arr};if(!save(K.food,next))return false;state.foodLog=next;
- const row=main.querySelector(`[data-foodrow="${idx}"]`);
- if(row){
-  const amount=row.querySelector('[data-gram]');
-  if(amount){amount.value=g;row.querySelector('.meal-picker-kcal').textContent=pickerCalories(f,g);}
- }
  const total=main.querySelector('#pickerMealCalories');if(total)total.textContent=pickerMealCalories();
  main.querySelector('#foodList')?.dispatchEvent(new CustomEvent('foodlogged',{detail:f.name}));
  notifyUser(f.name+' hinzugefügt · '+g+' '+u+' · '+mealLabel(selectedMeal));buzz('complete');return true;
@@ -8891,9 +8878,9 @@ function openFoodInfo(idx,options={}){
  const h=foodHealth(f);
  const health=h.length?`<ul class="health-list">${h.map(([t,d])=>`<li><b>${esc(t)}:</b> ${esc(d)}</li>`).join("")}</ul>`:`<p class="muted sm" style="margin:8px 0 0">Sticht bei keinem Nährstoff besonders hervor — in Maßen Teil einer ausgewogenen Ernährung.</p>`;
  const portions=foodPortions(f)||[];
- const last=lastFoodAmount(f.name,u),input=main.querySelector(`[data-gram="${idx}"]`);
+ const last=lastFoodAmount(f.name,u);
  const explicitAmount=Number.isFinite(options.grams);
- const initial=explicitAmount?options.grams:input&&Number.isFinite(input.valueAsNumber)?input.valueAsNumber:suggestedFoodAmount(f);
+ const initial=explicitAmount?options.grams:suggestedFoodAmount(f);
  const preset=explicitAmount?portions.findIndex(([,amount])=>amount===options.grams):portions.length?0:-1;
  trainingSheet(f.name,`<form class="food-detail" id="foodLogForm"><p class="setting-help">${last?`Zuletzt ${last.toLocaleString('de-DE')} ${u} verwendet.`:'Wähle deine Menge und füge das Lebensmittel direkt zu deiner Mahlzeit hinzu.'}</p><div class="food-amount-grid"><label>Menge<input class="inp" id="foodDetailAmount" type="number" min="0.001" max="100000" step="any" inputmode="decimal" enterkeyhint="done" required value="${preset>=0?1:initial}"></label><label>Einheit<select class="sel" id="foodDetailUnit"><option value="g">${u==='ml'?'Milliliter':'Gramm'}</option>${portions.map(([label,g],i)=>`<option value="${i}" ${preset===i?'selected':''}>${esc(label)} (${g} ${u})</option>`).join('')}</select></label></div><div class="food-portion-choices">${portions.map(([label,g],i)=>`<button type="button" data-foodportion="${i}" aria-pressed="${preset===i}">${esc(label)} · ${g} ${u}</button>`).join('')}${last?`<button type="button" data-foodlast>Zuletzt ${last.toLocaleString('de-DE')} ${u}</button>`:''}</div><p class="food-live-amount" id="foodLiveAmount" aria-live="polite"></p><div class="food-macros">${[['kcal','kcal'],['p','g Protein'],['c','g Kohlenh.'],['f','g Fett']].map(([key,label])=>`<div><b data-foodstat="${key}">—</b><small>${label}</small></div>`).join('')}</div><p class="setting-help">Nährwerte und Portionsgrößen sind Richtwerte. Du kannst auch halbe oder mehrere Portionen eintragen.</p><details class="disclosure"><summary>Nährwerte pro 100 ${u}</summary><div class="disclosure-content nuttable">${rows}</div></details><details class="disclosure" style="margin-top:10px"><summary>Mehr über dieses Lebensmittel</summary><div class="disclosure-content">${health}</div></details><div class="food-log-footer"><label class="lbl-sm" for="foodDetailMeal" style="margin-top:0">Mahlzeit</label><select class="sel" id="foodDetailMeal">${MEALS.map(([key,label])=>`<option value="${key}" ${state.mealFor===key?'selected':''}>${label}</option>`).join('')}</select><p class="food-log-error" id="foodLogError" role="status"></p><button class="btn" type="submit" id="foodDetailAdd">Hinzufügen</button></div></form>`,dialog=>{
   if(f.source==='openfoodfacts')dialog.querySelector('.food-detail').insertAdjacentHTML('afterbegin',offSource()+`<p class="setting-help">${f.packageAmount?`Packungsinhalt: ${f.packageAmount.toLocaleString('de-DE')} ${u}.`:f.sizeUnknown?'Keine Packungs- oder Portionsgröße hinterlegt. Bitte prüfe die Menge auf der Verpackung.':'Portionsgröße laut Produktdaten.'}</p>`);
