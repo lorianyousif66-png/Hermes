@@ -395,8 +395,8 @@ body.has-background .app{background:var(--bg);background:color-mix(in srgb,var(-
 @media(max-width:360px){.meal-picker .gramrow{gap:4px}.meal-picker-footer{padding-inline:12px}}
 .workout-preview-list{padding-left:24px;margin:12px 0 20px}.workout-preview-list li{padding:10px 4px;border-bottom:1px solid var(--hair);overflow-wrap:anywhere}.workout-preview-list small{display:block;color:var(--muted);margin-top:4px}.workout-session-tools button{min-height:44px}.exercise-card{scroll-margin-top:80px}
 .restbar .rest-default{padding:6px 8px;min-height:44px;white-space:nowrap}
-.rest-time-fields{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:end}
-.rest-time-fields>span{padding-bottom:13px}
+.rest-presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 0}
+.rest-presets button{min-height:44px;font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -423,7 +423,7 @@ body.has-background .app{background:var(--bg);background:color-mix(in srgb,var(-
 </div></div>
 <script>
 "use strict";
-const APP_VERSION='4.8.5';
+const APP_VERSION='4.8.6';
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 /* Kurze Vibration als Bestätigung (Android; anderswo stiller No-Op). */
 function buzz(p='tap'){if(state.settings.haptics===false)return;const patterns={tap:7,select:10,complete:[12,35,18],delete:14,undo:[7,25,7],success:[15,45,25],ready:6};try{if(navigator.vibrate)navigator.vibrate(typeof p==='string'?(patterns[p]||7):p);}catch(e){}}
@@ -818,7 +818,9 @@ const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",
 const UNITS={kg:{w:"kg",r:"Wdh.",lbl:"Kilogramm"},s:{w:"—",r:"Sek.",lbl:"Sekunden"},bw:{w:"—",r:"Wdh.",lbl:"Körpergewicht"},min:{w:"—",r:"Min.",lbl:"Minuten (Cardio)"}};
 const SET_TYPES=[['normal','N','Normal'],['failure','F','Muskelversagen'],['warmup','W','Aufwärmen'],['drop','D','Dropsatz']];
 const THEMES={obsidian:{name:'Obsidian',sub:'Dunkel · Original',bg:'#0A0A0A',surface:'#242424',accent:'#F2F0EB'},marmor:{name:'Marmor',sub:'Hell · Original',bg:'#F3F1EB',surface:'#D6D1C4',accent:'#16130C'},ocean:{name:'Ocean',sub:'Ruhiges Blau',bg:'#0B141D',surface:'#2F485A',accent:'#B0DDF4'},forest:{name:'Forest',sub:'Sanftes Grün',bg:'#0E1612',surface:'#3A5142',accent:'#C3DDB5'},purple:{name:'Purple',sub:'Warmes Violett',bg:'#15111D',surface:'#4B3D60',accent:'#DBC5F5'}};
-function readSettings(){const s=Object.assign({theme:'obsidian',rest:90,protein:1.9,shiftMode:false,haptics:true,backgroundVisibility:25},load(K.settings,{})||{});if(!Object.hasOwn(THEMES,s.theme))s.theme='obsidian';s.haptics=s.haptics!==false;s.backgroundVisibility=Number.isFinite(s.backgroundVisibility)?Math.max(10,Math.min(60,s.backgroundVisibility)):25;return s;}
+const REST_PRESETS=[30,60,90,120,150,180];
+const DEFAULT_REST=180;
+function readSettings(){const s=Object.assign({theme:'obsidian',rest:DEFAULT_REST,protein:1.9,shiftMode:false,haptics:true,backgroundVisibility:25},load(K.settings,{})||{});if(!Object.hasOwn(THEMES,s.theme))s.theme='obsidian';s.haptics=s.haptics!==false;s.backgroundVisibility=Number.isFinite(s.backgroundVisibility)?Math.max(10,Math.min(60,s.backgroundVisibility)):25;s.rest=REST_PRESETS.includes(s.restPreset)?s.restPreset:DEFAULT_REST;return s;}
 function validBackground(value){return value===null||(typeof value==='string'&&value.length<800000&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value));}
 
 const state={
@@ -1207,27 +1209,19 @@ function showWorkoutPreview(id){
  });
 }
 function showDefaultRest(){
- const duration=Math.round(state.settings.rest);
- trainingSheet('Standardpause',`<form class="sheet-form">
-  <div class="rest-time-fields">
-   <label>Minuten<input class="inp" id="defaultRestMinutes" type="number" min="0" max="10" step="1" inputmode="numeric" required value="${Math.floor(duration/60)}"></label>
-   <span aria-hidden="true">:</span>
-   <label>Sekunden<input class="inp" id="defaultRestSeconds" type="number" min="0" max="59" step="1" inputmode="numeric" required value="${String(duration%60).padStart(2,'0')}"></label>
+ trainingSheet('Standardpause',`<p class="setting-help">Wähle die Dauer für die nächste Pause.</p>
+  <div class="rest-presets" role="group" aria-label="Pausendauer">
+   ${REST_PRESETS.map(seconds=>`<button class="chip${state.settings.rest===seconds?' chip--on':''}" type="button" data-rest-preset="${seconds}" aria-pressed="${state.settings.rest===seconds}">${fmtElapsed(seconds)}</button>`).join('')}
   </div>
-  <p class="setting-help">Gilt ab der nächsten Pause. 0:00 schaltet den automatischen Timer aus.</p>
   <p class="food-log-error" role="status" id="defaultRestError"></p>
-  <button class="btn" type="submit">Standardpause speichern</button>
- </form>`,dialog=>{
-  dialog.querySelector('form').onsubmit=event=>{
-   event.preventDefault();
-   const minutes=dialog.querySelector('#defaultRestMinutes').valueAsNumber;
-   const seconds=dialog.querySelector('#defaultRestSeconds').valueAsNumber;
-   const rest=minutes*60+seconds,error=dialog.querySelector('#defaultRestError');
-   if(!Number.isInteger(rest)||rest<0||rest>600){error.textContent='Wähle eine Zeit zwischen 0:00 und 10:00.';return;}
-   const settings={...state.settings,rest};
+ `,dialog=>{
+  dialog.querySelectorAll('[data-rest-preset]').forEach(button=>button.onclick=()=>{
+   const rest=Number(button.dataset.restPreset);
+   if(!REST_PRESETS.includes(rest))return;
+   const settings={...state.settings,rest,restPreset:rest};
    if(!save(K.settings,settings)){dialog.querySelector('#defaultRestError').textContent='Die Pause konnte nicht gespeichert werden.';return;}
    state.settings=settings;dialog.close();render();
-  };
+  });
  });
 }
 function trainingSheet(title,content,wireContent){
@@ -9236,7 +9230,7 @@ function openExercisePicker(target={}){
  dialog.querySelector('[data-pickercustom]').onclick=()=>trainingSheet('Eigene Übung',`<form class="sheet-form" id="customTemplateExercise"><label>Name<input class="inp" id="customExName" maxlength="100" required placeholder="Zum Beispiel: Kabelzug eng"></label><label>Erfassung<select class="sel" id="customExUnit">${Object.entries(UNITS).map(([k,u])=>`<option value="${k}">${u.lbl}</option>`).join('')}</select></label><button class="btn" type="submit">${replace?'Übung ersetzen':target.appendSession?'Zum Training hinzufügen':'Zur Vorlage hinzufügen'}</button></form>`,sheet=>{sheet.querySelector('form').onsubmit=e=>{e.preventDefault();const name=sheet.querySelector('#customExName').value.trim();if(name)apply([newTemplateExercise({name,unit:sheet.querySelector('#customExUnit').value,steps:[]})]);};});
  });
 }
-function goalsEditor(){const s=state.settings;return `<span class="lbl-sm">Protein-Faktor (g / kg Körpergewicht)</span><div class="stepper"><button data-prot="-1">−</button><span class="val" id="protVal">${s.protein.toFixed(1)}</span><button data-prot="1">+</button></div><span class="lbl-sm">Standardpause (Min:Sek)</span><div class="stepper"><button data-setrest="-1">−</button><span class="val" id="restVal">${fmtElapsed(s.rest)}</span><button data-setrest="1">+</button></div>`;}
+function goalsEditor(){const s=state.settings;return `<span class="lbl-sm">Protein-Faktor (g / kg Körpergewicht)</span><div class="stepper"><button data-prot="-1">−</button><span class="val" id="protVal">${s.protein.toFixed(1)}</span><button data-prot="1">+</button></div><span class="lbl-sm">Standardpause</span><button class="btn btn-ghost" data-settings-rest>${fmtElapsed(s.rest)} ändern</button>`;}
 function themeEditor(){return `<h3 class="setting-title">Deine Farbpalette</h3><p class="setting-help">Wähle den Look, in dem du dich wohlfühlst.</p><div class="palette-grid">${Object.entries(THEMES).map(([key,t])=>`<button class="palette-choice" data-settheme="${key}" aria-pressed="${state.settings.theme===key}"><span class="palette-swatch" style="--swatch-bg:${t.bg};--swatch-surface:${t.surface};--swatch-accent:${t.accent}" aria-hidden="true"><i></i><i></i><i></i></span><b>${t.name}</b><small>${t.sub}</small></button>`).join('')}</div><div class="settings-divider"></div><h3 class="setting-title">Dein Hintergrund</h3><p class="setting-help">Ein Lieblingsbild aus deiner Galerie. Es bleibt auf deinem Gerät und wird auch offline angezeigt.</p>${state.background&&validBackground(state.background)?`<img class="background-preview" src="${esc(state.background)}" alt="Dein gewählter Hintergrund"><div class="form-actions"><button class="btn btn-ghost btn-sm" data-backgroundpick>Bild wechseln</button><button class="btn btn-ghost btn-sm" data-backgroundremove>Entfernen</button></div><label class="range-label" for="backgroundVisibility">Sichtbarkeit <span id="backgroundVisibilityValue">${state.settings.backgroundVisibility}%</span></label><input class="settings-range" id="backgroundVisibility" type="range" min="10" max="60" step="5" value="${state.settings.backgroundVisibility}">`:`<button class="btn btn-ghost" data-backgroundpick>Bild aus Galerie wählen</button>`}<input id="backgroundFile" type="file" accept="image/*" hidden><div class="settings-divider"></div><div class="between"><div><h3 class="setting-title">Haptisches Feedback</h3><p class="setting-help" style="margin-bottom:0">Dezente Impulse beim Tippen und Abschließen.</p></div><button class="settings-switch" data-hapticstoggle role="switch" aria-label="Haptisches Feedback" aria-checked="${state.settings.haptics}"><i></i></button></div><p class="setting-help">${typeof navigator.vibrate==='function'?'Die Stärke richtet sich nach deinem Gerät.':'Dein Browser bietet keine Vibration an. Visuelles Feedback ist weiterhin aktiv.'}</p>`;}
 function motionSettings(){return `<div class="settings-divider"></div><h3 class="setting-title">Animationen</h3><p class="setting-help" data-motionstatus>${reducedMotion()?'Dein Gerät hat reduzierte Bewegung aktiviert. Deshalb sind Animationen in Hermes ausgeschaltet.':'Weiche Übergänge beim Seitenwechsel, Öffnen von Menüs und Abschließen von Sätzen.'}</p><button class="btn btn-ghost btn-sm" data-motionpreview>Animation testen</button>`;}
 function histEditor(){if(!state.history.length)return `<p class="muted">Noch keine Einheiten.</p>`;return [...state.history].reverse().map((h,ri)=>{const i=state.history.length-1-ri;const sd=h.exercises.reduce((a,e)=>a+e.sets.filter(s=>s.done).length,0);return `<div class="histitem"><div><button class="hd-l" data-workoutsummary="${i}" aria-label="Zusammenfassung ${esc(h.dayLabel)} ansehen">${esc(h.dayLabel)} <span class="history-open">↗</span></button><div class="hd-d">${fmtFull(h.date)} · ${sd} Sätze${Number.isFinite(h.durationSec)?' · '+fmtElapsed(h.durationSec):''}${h.note?' · Notiz':''}</div></div><button class="del" data-delhist="${i}" aria-label="Training ${esc(h.dayLabel)} löschen">✕</button></div>`;}).join("");}
@@ -9300,7 +9294,6 @@ function wire(){
  main.querySelectorAll('[data-settype]').forEach(btn=>btn.onclick=()=>{const [ei,si]=btn.dataset.settype.split('-').map(Number);showSetTypes(ei,si);});
  main.querySelectorAll("[data-check]").forEach(btn=>btn.onclick=()=>{const [ei,si]=btn.dataset.check.split("-").map(Number);ensureWorkoutStarted();const s=state.log[ei].sets[si];s.done=!s.done;if(s.done)buzz(10);btn.classList.toggle("check--on",s.done);btn.setAttribute('aria-pressed',String(s.done));const r=main.querySelector(`[data-row="${ei}-${si}"]`);if(r)r.classList.toggle("setrow--done",s.done);updateProgress();if(s.done&&state.settings.rest>0)startRest();});
  main.querySelectorAll('[data-exercise-rest]').forEach(button=>button.onclick=()=>{
-  if(state.settings.rest===0){showDefaultRest();return;}
   ensureWorkoutStarted();startRest();
  });
  main.querySelectorAll('[data-addset]').forEach(button=>button.onclick=()=>{
@@ -9375,7 +9368,7 @@ function wire(){
  const wm=main.querySelector("[data-wizmake]");if(wm)wm.onclick=()=>{const generated=generatePlan(state.wiz.focus,state.wiz.days);generated.forEach(d=>{const label=d.label;let n=2;while(state.plan.some(x=>x.label===d.label))d.label=`${label} (${n++})`;state.plan.push(d);});sP();render();notifyUser(generated.length+' Vorlagen hinzugefügt.');};
  // goals/theme
  main.querySelectorAll("[data-prot]").forEach(b=>b.onclick=()=>{state.settings.protein=Math.min(2.6,Math.max(1.4,+(state.settings.protein+0.1*(+b.dataset.prot)).toFixed(1)));sS();const v=document.getElementById("protVal");if(v)v.textContent=state.settings.protein.toFixed(1);});
- main.querySelectorAll("[data-setrest]").forEach(b=>b.onclick=()=>{state.settings.rest=Math.min(600,Math.max(0,state.settings.rest+15*(+b.dataset.setrest)));sS();const v=document.getElementById("restVal");if(v)v.textContent=fmtElapsed(state.settings.rest);});
+ const settingsRest=main.querySelector('[data-settings-rest]');if(settingsRest)settingsRest.onclick=showDefaultRest;
  main.querySelectorAll("[data-settheme]").forEach(b=>b.onclick=()=>{state.settings.theme=b.dataset.settheme;sS();applyTheme();buzz('select');render();});
  // history/data
  main.querySelectorAll("[data-delhist]").forEach(b=>b.onclick=()=>{state.history.splice(+b.dataset.delhist,1);save(K.history,state.history);render();});
